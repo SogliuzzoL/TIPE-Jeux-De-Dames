@@ -1,6 +1,6 @@
 from plateau import *
-import src.ia.deeplearning.ai as dl
-import src.ia.minimax.ai as mm
+import ia.deeplearning.ai as dl
+import ia.minimax.ai as mm
 
 
 if __name__ == "__main__":
