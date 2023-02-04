@@ -8,3 +8,4 @@ if __name__ == "__main__":
 
     coups = coups_possibles(plateau.positions(), 1)
     print(f"Nombres de coups: {len(coups)}. Coups possibles:{coups}")
+    dl.make_prediction(plateau)
