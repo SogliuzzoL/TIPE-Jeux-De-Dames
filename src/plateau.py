@@ -73,14 +73,15 @@ def coups_possibles(positions: dict, couleur=0):
     max_coups = 0
     # Manger
     for case in positions.keys():
-        tree = manger(case, positions, couleur)
-        if tree.depth():
-            tree.show()
-            paths = tree.paths_to_leaves()
-            for path in paths:
-                if max_coups < len(path):
-                    max_coups = len(path)
-                coups_tempo.append(path)
+        if positions[case][0] == couleur:
+            tree = manger(case, positions, couleur)
+            if tree.depth():
+                tree.show()
+                paths = tree.paths_to_leaves()
+                for path in paths:
+                    if max_coups < len(path):
+                        max_coups = len(path)
+                    coups_tempo.append(path)
     # Trie des coups pour manger
     for i in range(len(coups_tempo)):
         if len(coups_tempo[i]) == max_coups:
