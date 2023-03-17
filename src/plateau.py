@@ -39,24 +39,25 @@ def manger(case: int, positions: dict, couleur=0, tree=None, parent=None):
         tree.create_node(case, case)
         parent = case
     parity = ((case - 1) // 5) % 2
+    datas = []
     if parity:
-        pass
+        datas = [[5, 11, 0], [4, 9, -1], [-5, -9, 0], [-6, -11, -1]]
     else:
         datas = [[6, 11, 0], [5, 9, -1], [-4, -9, 0], [-5, -11, -1]]
-        for i in range(len(datas)):
-            if case + datas[i][0] in positions.keys() and case + datas[i][1] not in positions.keys() and (
-                    case + datas[i][2]) % 5 != 0:
-                if positions[case + datas[i][0]][0] != couleur and 0 < case + datas[i][0] < 50:
-                    positions_copie = positions.copy()
-                    data = positions_copie[case]
-                    del positions_copie[case + datas[i][0]]
-                    positions_copie[case + datas[i][1]] = data
-                    try:
-                        tree.create_node(f'{case}x{case + datas[i][1]}', f'{case}x{case + datas[i][1]}', parent=parent)
-                    except treelib.exceptions.DuplicatedNodeIdError:
-                        tree.create_node(f'{case}x{case + datas[i][1]}-{time.time()}',
-                                         f'{case}x{case + datas[i][1]}-{time.time()}', parent=parent)
-                    manger(case + datas[i][1], positions_copie, couleur, tree, f'{case}x{case + datas[i][1]}')
+    for i in range(len(datas)):
+        if case + datas[i][0] in positions.keys() and case + datas[i][1] not in positions.keys() and (
+                case + datas[i][2]) % 5 != 0:
+            if positions[case + datas[i][0]][0] != couleur and 0 < case + datas[i][0] < 50:
+                positions_copie = positions.copy()
+                data = positions_copie[case]
+                del positions_copie[case + datas[i][0]]
+                positions_copie[case + datas[i][1]] = data
+                try:
+                    tree.create_node(f'{case}x{case + datas[i][1]}', f'{case}x{case + datas[i][1]}', parent=parent)
+                except treelib.exceptions.DuplicatedNodeIdError:
+                    tree.create_node(f'{case}x{case + datas[i][1]}-{time.time()}',
+                                     f'{case}x{case + datas[i][1]}-{time.time()}', parent=parent)
+                manger(case + datas[i][1], positions_copie, couleur, tree, f'{case}x{case + datas[i][1]}')
     return tree
 
 
