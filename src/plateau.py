@@ -33,7 +33,7 @@ class Plateau:
         return positions
 
 
-def manger(case: int, positions: dict, couleur=0, tree=None, parent=None):
+def coups_prises_pions(case: int, positions: dict, couleur=0, tree=None, parent=None):
     if tree is None:
         tree = Tree()
         tree.create_node(case, case)
@@ -57,8 +57,33 @@ def manger(case: int, positions: dict, couleur=0, tree=None, parent=None):
                 except treelib.exceptions.DuplicatedNodeIdError:
                     tree.create_node(f'{case}x{case + datas[i][1]}-{time.time()}',
                                      f'{case}x{case + datas[i][1]}-{time.time()}', parent=parent)
-                manger(case + datas[i][1], positions_copie, couleur, tree, f'{case}x{case + datas[i][1]}')
+                coups_prises_pions(case + datas[i][1], positions_copie, couleur, tree, f'{case}x{case + datas[i][1]}')
     return tree
+
+
+def coups_avancer_pions(case: int, positions: dict, couleur=0):
+    coups = []
+    modifier_couleur = 1
+    modifier_couleur2 = 0
+    parity = ((case - 1) // 5) % 2
+    if couleur == 0:
+        modifier_couleur = -1
+        if parity: modifier_couleur2 = -1
+        else: modifier_couleur2 = 1
+    if (case // 5) % 2 == 1 and case % 5 == 0 or (case // 5) % 2 == 1 and case % 5 == 1:
+        if case + 5 * modifier_couleur not in positions: coups.append(f'{case}-{case + 5 * modifier_couleur}')
+    else:
+        if case + (5 - parity) * modifier_couleur + modifier_couleur2 not in positions:
+            coups.append(f'{case}-{case + (5 - parity) * modifier_couleur + modifier_couleur2}')
+        if case + (6 - parity) * modifier_couleur + modifier_couleur2 not in positions:
+            coups.append(f'{case}-{case + (6 - parity) * modifier_couleur + modifier_couleur2}')
+    return coups
+
+
+def coups_avancer_dames(case, positions, couleur):
+    coups = []
+
+    return coups
 
 
 def coups_possibles(positions: dict, couleur=0):
@@ -71,18 +96,19 @@ def coups_possibles(positions: dict, couleur=0):
     coups = []
     coups_tempo = []
     max_coups = 0
-    # Manger
+    # Prises
     for case in positions.keys():
         if positions[case][0] == couleur:
-            tree = manger(case, positions, couleur)
-            if tree.depth():
-                tree.show()
-                paths = tree.paths_to_leaves()
-                for path in paths:
-                    if max_coups < len(path):
-                        max_coups = len(path)
-                    coups_tempo.append(path)
-    # Trie des coups pour manger
+            if not positions[case][1]:
+                tree = coups_prises_pions(case, positions, couleur)
+                if tree.depth():
+                    tree.show()
+                    paths = tree.paths_to_leaves()
+                    for path in paths:
+                        if max_coups < len(path):
+                            max_coups = len(path)
+                        coups_tempo.append(path)
+    # Trie des coups pour prises
     for i in range(len(coups_tempo)):
         if len(coups_tempo[i]) == max_coups:
             for j in range(len(coups_tempo[i])):
@@ -93,32 +119,8 @@ def coups_possibles(positions: dict, couleur=0):
     # Avancer
     if len(coups) == 0:
         for case in positions.keys():
-            # Pions noirs
-            if positions[case][0] and couleur == 1:
-                # Pions sur la rangée de droite et sur une ligne paire
-                # Pions sur la rangée de gauche et sur une ligne impaire
-                if (case // 5) % 2 == 1 and case % 5 == 0 or (case // 5) % 2 == 1 and case % 5 == 1:
-                    if case + 5 not in positions: coups.append(f'{case}-{case + 5}')
-                # Tous les autres pions
-                else:
-                    parity = ((case - 1) // 5) % 2
-                    if case + 5 - parity not in positions:
-                        coups.append(f'{case}-{case + 5 - parity}')
-                    if case + 6 - parity not in positions:
-                        coups.append(f'{case}-{case + 6 - parity}')
-            # Pions blancs
-            elif positions[case][0] == 0 and couleur == 0:
-                # Pions sur la rangée de droite et sur une ligne paire
-                # Pions sur la rangée de gauche et sur une ligne impaire
-                if (case // 5) % 2 == 1 and case % 5 == 0 or (case // 5) % 2 == 1 and case % 5 == 1:
-                    if case - 5 not in positions: coups.append(f'{case}-{case - 5}')
-                # Tous les autres pions
-                else:
-                    parity = (case // 5) % 2
-                    if parity == 0 and case % 5 == 0:
-                        parity = 1
-                    if case - 5 - parity not in positions:
-                        coups.append(f'{case}-{case - 5 - parity}')
-                    if case - 4 - parity not in positions:
-                        coups.append(f'{case}-{case - 4 - parity}')
+            if not positions[case][1] and positions[case][0] == couleur:
+                coups.extend(coups_avancer_pions(case, positions, couleur))
+            elif positions[case][1] and positions[case][0] == couleur:
+                coups.extend(coups_avancer_dames(case, positions, couleur))
     return coups
