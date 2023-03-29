@@ -68,8 +68,10 @@ def coups_avancer_pions(case: int, positions: dict, couleur=0):
     parity = ((case - 1) // 5) % 2
     if couleur == 0:
         modifier_couleur = -1
-        if parity: modifier_couleur2 = -1
-        else: modifier_couleur2 = 1
+        if parity:
+            modifier_couleur2 = -1
+        else:
+            modifier_couleur2 = 1
     if (case // 5) % 2 == 1 and case % 5 == 0 or (case // 5) % 2 == 1 and case % 5 == 1:
         if case + 5 * modifier_couleur not in positions: coups.append(f'{case}-{case + 5 * modifier_couleur}')
     else:
@@ -82,7 +84,20 @@ def coups_avancer_pions(case: int, positions: dict, couleur=0):
 
 def coups_avancer_dames(case, positions, couleur):
     coups = []
-
+    # Avancer vers en haut à gauche
+    isOk = True
+    caseTemp = case
+    if (((caseTemp - 1) // 5) % 2 == 0) or (caseTemp - 1) % 5:
+        while isOk:
+            parity = ((caseTemp - 1) // 5) % 2
+            if not parity and (caseTemp - 1) % 5 == 0:
+                isOk = False
+            if caseTemp - 5 - parity not in positions and caseTemp - 5 - parity > 0:
+                caseTemp = caseTemp - 5 - parity
+                coups.append(f'{case}-{caseTemp}')
+            else:
+                isOk = False
+    isOk = True
     return coups
 
 
