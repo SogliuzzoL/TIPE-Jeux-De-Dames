@@ -1,6 +1,8 @@
 import time
 
+import pygame.draw
 import treelib.exceptions
+from pygame import Surface
 from treelib import Tree
 
 
@@ -87,7 +89,8 @@ def coups_avancer_dames(case, positions, couleur):
     # Avancer en haut à gauche
     case_temp = case
     parity = ((case_temp - 1) // 5) % 2
-    while ((case_temp - 1) % 5 != 0 or ((case_temp - 1) // 5) % 2 == 0) and (case_temp > 5) and ((case_temp - 5 - parity) not in positions.keys()):
+    while ((case_temp - 1) % 5 != 0 or ((case_temp - 1) // 5) % 2 == 0) and (case_temp > 5) and (
+            (case_temp - 5 - parity) not in positions.keys()):
         case_temp -= 5 + parity
         parity = ((case_temp - 1) // 5) % 2
     coups.append(f'{case}-{case_temp}')
@@ -95,7 +98,8 @@ def coups_avancer_dames(case, positions, couleur):
     # Avancer en haut à droite
     case_temp = case
     parity = ((case_temp - 1) // 5) % 2
-    while (case_temp % 5 != 0 or ((case_temp - 1) // 5) % 2 == 1) and (case_temp > 5) and ((case_temp - 4 - parity) not in positions.keys()):
+    while (case_temp % 5 != 0 or ((case_temp - 1) // 5) % 2 == 1) and (case_temp > 5) and (
+            (case_temp - 4 - parity) not in positions.keys()):
         case_temp -= 4 + parity
         parity = ((case_temp - 1) // 5) % 2
     coups.append(f'{case}-{case_temp}')
@@ -141,3 +145,37 @@ def coups_possibles(positions: dict, couleur=0):
             elif positions[case][1] and positions[case][0] == couleur:
                 coups.extend(coups_avancer_dames(case, positions, couleur))
     return coups
+
+
+def affichage_plateau(plateau: Plateau, screen: Surface):
+    positions = plateau.positions()
+    white_case_color = (230, 240, 245)
+    black_case_color = (25, 15, 10)
+    white_pion_color = (247, 198, 72)
+    black_pion_color = (129, 84, 71)
+    screen_size = screen.get_size()
+    case_size = screen_size[1] / 10
+    start_x = (screen_size[0] - screen_size[1]) / 2
+    for i in range(10):
+        for j in range(10):
+            if (i + j) % 2:
+                pygame.draw.rect(screen, black_case_color,
+                                 (start_x + i * case_size, j * case_size, case_size, case_size))
+            else:
+                pygame.draw.rect(screen, white_case_color,
+                                 (start_x + i * case_size, j * case_size, case_size, case_size))
+    for key in positions.keys():
+        pion_color = positions[key][0]
+        pion_dame = positions[key][1]
+        case_x = (key * 2 + 1) % 10
+        case_y = (key - 1) * 2 // 10
+        if case_y % 2:
+            case_x -= 1
+        if pion_color:
+            pygame.draw.circle(screen, black_pion_color,
+                               (start_x + case_x * case_size + case_size // 2, case_y * case_size + case_size // 2),
+                               case_size * 0.95 // 2)
+        else:
+            pygame.draw.circle(screen, white_pion_color,
+                               (start_x + case_x * case_size + case_size // 2, case_y * case_size + case_size // 2),
+                               case_size * 0.95 // 2)
