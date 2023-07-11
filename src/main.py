@@ -1,17 +1,13 @@
 import random
-import time
-
-import pygame
 
 from plateau import *
-import ia.deeplearning.ia as dl
-import ia.minimax.ia as mm
 
 if __name__ == "__main__":
     """
     Paramètre de la fenêtre
     """
-    test = False
+    test_dames = False
+    fast_simu = False
     human_vs_bot = True
     game_fps = 60
     case_depart = 0
@@ -26,6 +22,8 @@ if __name__ == "__main__":
     Création d'un nouveau plateau
     """
     plateau = Plateau()
+    if test_dames:
+        plateau.pions = [Pion(28, 0, True), Pion(48, 1, True)]
     """
     Création de la fenêtre
     """
@@ -74,9 +72,9 @@ if __name__ == "__main__":
                     case_depart = 0
                     case_arrive = 0
         win = plateau.check_win()
-        if win == 0 or win == 1:
+        if (win == 0 or win == 1) and not test_dames:
             plateau = Plateau()
-        if test or human_vs_bot and plateau.round_side:
+        if fast_simu or human_vs_bot and plateau.round_side:
             coups = coups_possibles(plateau.positions(), plateau.round_side)
             if len(coups) == 0:
                 plateau = Plateau()
@@ -107,6 +105,6 @@ if __name__ == "__main__":
         """
         affichage_plateau(plateau, screen)
         pygame.display.update()
-        if not test:
+        if not fast_simu:
             clock.tick(game_fps)
     pygame.quit()

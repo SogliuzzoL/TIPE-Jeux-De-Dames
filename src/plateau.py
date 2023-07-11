@@ -7,7 +7,7 @@ from treelib import Tree
 
 
 class Pion:
-    def __init__(self, emplacement, couleur):
+    def __init__(self, emplacement, couleur, dame=False):
         """
         Cette fonction permet de créer un pion sur le plateau.
         :param emplacement: Emplacement du pion sur le plateau.
@@ -15,7 +15,7 @@ class Pion:
         """
         self.emplacement = emplacement
         self.color = couleur
-        self.dame = False
+        self.dame = dame
 
 
 class Plateau:
@@ -62,7 +62,6 @@ class Plateau:
             return 1
         else:
             return 0
-
 
     def move_point(self, start_position: int, end_position: int):
         """
@@ -213,7 +212,7 @@ def coups_avancer_dames(case, positions, couleur):
             (case_temp - 5 - parity) not in positions.keys()):
         case_temp -= 5 + parity
         parity = ((case_temp - 1) // 5) % 2
-    coups.append(f'{case}-{case_temp}')
+        coups.append(f'{case}-{case_temp}')
 
     # Avancer en haut à droite
     case_temp = case
@@ -222,7 +221,25 @@ def coups_avancer_dames(case, positions, couleur):
             (case_temp - 4 - parity) not in positions.keys()):
         case_temp -= 4 + parity
         parity = ((case_temp - 1) // 5) % 2
-    coups.append(f'{case}-{case_temp}')
+        coups.append(f'{case}-{case_temp}')
+
+    # Avancer en bas à gauche
+    case_temp = case
+    parity = ((case_temp - 1) // 5) % 2
+    while ((case_temp - 1) % 5 != 0 or ((case_temp - 1) // 5) % 2 == 0) and (case_temp < 46) and (
+            (case_temp + 5 - parity) not in positions.keys()):
+        case_temp += 5 - parity
+        parity = ((case_temp - 1) // 5) % 2
+        coups.append(f'{case}-{case_temp}')
+
+    # Avancer en bas à droite
+    case_temp = case
+    parity = ((case_temp - 1) // 5) % 2
+    while (case_temp % 5 != 0 or ((case_temp - 1) // 5) % 2 == 1) and (case_temp < 46) and (
+            (case_temp + 6 - parity) not in positions.keys()):
+        case_temp += 6 - parity
+        parity = ((case_temp - 1) // 5) % 2
+        coups.append(f'{case}-{case_temp}')
 
     return coups
 
@@ -277,8 +294,8 @@ def coups_possibles(positions: dict, couleur=0):
         for case in positions.keys():
             if not positions[case][1] and positions[case][0] == couleur:
                 coups.extend(coups_avancer_pions(case, positions, couleur))
-            #elif positions[case][1] and positions[case][0] == couleur:
-            #    coups.extend(coups_avancer_dames(case, positions, couleur))
+            elif positions[case][1] and positions[case][0] == couleur:
+                coups.extend(coups_avancer_dames(case, positions, couleur))
     return coups
 
 
