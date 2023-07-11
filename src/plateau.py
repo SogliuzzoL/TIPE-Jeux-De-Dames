@@ -10,8 +10,7 @@ class Pion:
     def __init__(self, emplacement, couleur):
         """
         Cette fonction permet de créer un pion sur le plateau.
-        :param x: Représente la coordonnée en x (entre 0 et 9) du pion.
-        :param y: Représente la coordonnée en y (entre 0 et 9) du pion.
+        :param emplacement: Emplacement du pion sur le plateau.
         :param couleur: Pion de couleur Blanc (0) ou Noir (1).
         """
         self.emplacement = emplacement
@@ -21,6 +20,10 @@ class Pion:
 
 class Plateau:
     def __init__(self):
+        """
+        Création des données du plateau de jeu avec les pions des joueurs
+        """
+        self.round_side = 0
         self.pions = []
         for i in range(1, 21):
             self.pions.append(Pion(i, 1))
@@ -28,14 +31,123 @@ class Plateau:
         for i in range(31, 51):
             self.pions.append(Pion(i, 0))
 
-    def positions(self):
+    def positions(self) -> dict:
+        """
+        :return: Renvoie un dictionnaire avec pour clés les positions des pions et en valeurs leurs couleurs et leurs status de dame
+        """
         positions = {}
         for pion in self.pions:
             positions[pion.emplacement] = [pion.color, pion.dame]
         return positions
 
+    def check_win(self) -> int:
+        """
+        :return: Revoie -1 s'il n'y a pas de gagnant actuellement, 0 si les blancs ont gagné et 1 si les noirs ont gagné
+        """
+        if len(coups_possibles(self.positions(), self.round_side)) == 0:
+            if self.round_side:
+                return 0
+            else:
+                return 1
+        blanc_present = False
+        noir_present = False
+        for pion in self.pions:
+            if pion.color:
+                noir_present = True
+            else:
+                blanc_present = True
+            if blanc_present and noir_present:
+                return -1
+        if blanc_present:
+            return 1
+        else:
+            return 0
 
-def coups_prises_pions(case: int, positions: dict, couleur=0, tree=None, parent=None):
+
+    def move_point(self, start_position: int, end_position: int):
+        """
+        :param start_position: Emplacement du point à déplacer.
+        :param end_position: Emplacement où le point doit être déplacé.
+        """
+        for pion in self.pions:
+            if pion.emplacement == start_position:
+                if end_position == 0:
+                    self.pions.remove(pion)
+                else:
+                    pion.emplacement = end_position
+                    if pion.color and (end_position - 1) // 5 == 9 or not pion.color and (end_position - 1) // 5 == 0:
+                        pion.dame = True
+                break
+
+    def jouer_coup(self, coup: str, couleur=0) -> bool:
+        """
+        :param coup: Le coup a effectué (doit être dans les coups possibles et doit être au même format).
+        :param couleur: Couleur du joueur qui a effectué le coup.
+        :return: Boolean qui informe si le coup a été effectué ou pas.
+        """
+        if coup in coups_possibles(self.positions(), couleur):
+            """
+            Variables
+            """
+            pion_mange = []
+            start_case = 0
+            end_case = 0
+            if '-' in coup:
+                """
+                Cas où il n'y a pas de prise a effectué
+                """
+                temp_coup = coup.split('-')
+                start_case = int(temp_coup[0])
+                end_case = int(temp_coup[-1])
+            else:
+                """
+                Cas où il y a une ou plusieurs prises
+                """
+                temp_coup = coup.split('x')
+                start_case = temp_coup[0]
+                end_case = temp_coup[-1]
+                for i in range(len(temp_coup) - 1):
+                    sub = int(temp_coup[i + 1]) - int(temp_coup[i])
+                    if abs(sub) == 11:
+                        if sub > 0:
+                            if ((int(temp_coup[i]) - 1) // 5) % 2:
+                                pion_mange.append(int(temp_coup[i]) + 5)
+                            else:
+                                pion_mange.append(int(temp_coup[i]) + 6)
+                        else:
+                            if ((int(temp_coup[i]) - 1) // 5) % 2:
+                                pion_mange.append(int(temp_coup[i]) - 6)
+                            else:
+                                pion_mange.append(int(temp_coup[i]) - 5)
+                    else:
+                        if sub > 0:
+                            if ((int(temp_coup[i]) - 1) // 5) % 2:
+                                pion_mange.append(int(temp_coup[i]) + 4)
+                            else:
+                                pion_mange.append(int(temp_coup[i]) + 5)
+                        else:
+                            if ((int(temp_coup[i]) - 1) // 5) % 2:
+                                pion_mange.append(int(temp_coup[i]) - 5)
+                            else:
+                                pion_mange.append(int(temp_coup[i]) - 4)
+            self.move_point(int(start_case), int(end_case))
+            for case in pion_mange:
+                self.move_point(int(case), 0)
+            return True
+        return False
+
+
+def coups_prises_pions(case: int, positions: dict, couleur=0, tree=None, parent=None) -> Tree:
+    """
+    Cette fonction renvoie un arbre des prises possibles par un point.
+    Cette fonction est récursive !
+    :param case: Case du preneur.
+    :param positions: Dictionnaire des positions des pions sur le plateau.
+    :param couleur: Couleur du joueur étant en train de jouer.
+    :param tree: Arbre binaire servant à la fonction récursive.
+    :param parent: Case parent servant à la fonction récursive.
+    :return:
+    """
     if tree is None:
         tree = Tree()
         tree.create_node(case, case)
@@ -48,7 +160,7 @@ def coups_prises_pions(case: int, positions: dict, couleur=0, tree=None, parent=
         datas = [[6, 11, 0], [5, 9, -1], [-4, -9, 0], [-5, -11, -1]]
     for i in range(len(datas)):
         if case + datas[i][0] in positions.keys() and case + datas[i][1] not in positions.keys() and (
-                case + datas[i][2]) % 5 != 0:
+                case + datas[i][2]) % 5 != 0 and 0 < case + datas[i][1] <= 50:
             if positions[case + datas[i][0]][0] != couleur and 0 < case + datas[i][0] < 50:
                 positions_copie = positions.copy()
                 data = positions_copie[case]
@@ -63,7 +175,14 @@ def coups_prises_pions(case: int, positions: dict, couleur=0, tree=None, parent=
     return tree
 
 
-def coups_avancer_pions(case: int, positions: dict, couleur=0):
+def coups_avancer_pions(case: int, positions: dict, couleur=0) -> list:
+    """
+    Cette fonction cherche les coups ne permettant pas une prise par un point.
+    :param case: Case du point qui va avancer.
+    :param positions: Dictionnaire contenant les positions des points étant sur le plateau.
+    :param couleur: Couleur de joueur.
+    :return: Revoie une liste contenant les coups possibles par le points.
+    """
     coups = []
     modifier_couleur = 1
     modifier_couleur2 = 0
@@ -84,6 +203,7 @@ def coups_avancer_pions(case: int, positions: dict, couleur=0):
     return coups
 
 
+# IN BUILD
 def coups_avancer_dames(case, positions, couleur):
     coups = []
     # Avancer en haut à gauche
@@ -123,7 +243,6 @@ def coups_possibles(positions: dict, couleur=0):
             if not positions[case][1]:
                 tree = coups_prises_pions(case, positions, couleur)
                 if tree.depth():
-                    tree.show()
                     paths = tree.paths_to_leaves()
                     for path in paths:
                         if max_coups < len(path):
@@ -136,14 +255,30 @@ def coups_possibles(positions: dict, couleur=0):
                 if '-' in str(coups_tempo[i][j]):
                     split = str(coups_tempo[i][j]).split('-')
                     coups_tempo[i][j] = split[0]
-            coups.append(coups_tempo[i])
+            coups_tempo[i].remove(coups_tempo[i][0])
+            coups.extend(coups_tempo[i])
+    i = 0
+    while i < len(coups) - 1:
+        coup1 = coups[i].split('x')
+        coup2 = coups[i + 1].split('x')
+        if coup1[-1] == coup2[0]:
+            coups.remove(coups[i])
+            coups.remove(coups[i])
+            real_coup = coup1[0]
+            for j in range(1, len(coup1)):
+                real_coup += 'x' + coup1[j]
+            for j in range(1, len(coup2)):
+                real_coup += 'x' + coup2[j]
+            coups.insert(i, real_coup)
+            i -= 1
+        i += 1
     # Avancer
     if len(coups) == 0:
         for case in positions.keys():
             if not positions[case][1] and positions[case][0] == couleur:
                 coups.extend(coups_avancer_pions(case, positions, couleur))
-            elif positions[case][1] and positions[case][0] == couleur:
-                coups.extend(coups_avancer_dames(case, positions, couleur))
+            #elif positions[case][1] and positions[case][0] == couleur:
+            #    coups.extend(coups_avancer_dames(case, positions, couleur))
     return coups
 
 
@@ -153,21 +288,26 @@ def affichage_plateau(plateau: Plateau, screen: Surface):
     black_case_color = (25, 15, 10)
     white_pion_color = (247, 198, 72)
     black_pion_color = (129, 84, 71)
+    white_dame_color = (217, 168, 42)
+    black_dame_color = (159, 114, 101)
     screen_size = screen.get_size()
     case_size = screen_size[1] / 10
     start_x = (screen_size[0] - screen_size[1]) / 2
+    font = pygame.font.SysFont(pygame.font.get_fonts()[0], 24)
     for i in range(10):
         for j in range(10):
             if (i + j) % 2:
                 pygame.draw.rect(screen, black_case_color,
                                  (start_x + i * case_size, j * case_size, case_size, case_size))
+                text = font.render(str((i + j * 10) // 2 + 1), True, (125, 125, 125))
+                screen.blit(text, (start_x + i * case_size, j * case_size))
             else:
                 pygame.draw.rect(screen, white_case_color,
                                  (start_x + i * case_size, j * case_size, case_size, case_size))
     for key in positions.keys():
         pion_color = positions[key][0]
         pion_dame = positions[key][1]
-        case_x = (key * 2 + 1) % 10
+        case_x = (key * 2 - 1) % 10
         case_y = (key - 1) * 2 // 10
         if case_y % 2:
             case_x -= 1
@@ -175,7 +315,15 @@ def affichage_plateau(plateau: Plateau, screen: Surface):
             pygame.draw.circle(screen, black_pion_color,
                                (start_x + case_x * case_size + case_size // 2, case_y * case_size + case_size // 2),
                                case_size * 0.95 // 2)
+            if pion_dame:
+                pygame.draw.circle(screen, black_dame_color,
+                                   (start_x + case_x * case_size + case_size // 2, case_y * case_size + case_size // 2),
+                                   case_size * 0.75 // 2)
         else:
             pygame.draw.circle(screen, white_pion_color,
                                (start_x + case_x * case_size + case_size // 2, case_y * case_size + case_size // 2),
                                case_size * 0.95 // 2)
+            if pion_dame:
+                pygame.draw.circle(screen, white_dame_color,
+                                   (start_x + case_x * case_size + case_size // 2, case_y * case_size + case_size // 2),
+                                   case_size * 0.75 // 2)
