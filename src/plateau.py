@@ -23,6 +23,7 @@ class Plateau:
         """
         Création des données du plateau de jeu avec les pions des joueurs
         """
+        self.coups_sans_prise = 0
         self.round_side = 0
         self.pions = []
         for i in range(1, 21):
@@ -42,8 +43,10 @@ class Plateau:
 
     def check_win(self) -> int:
         """
-        :return: Revoie -1 s'il n'y a pas de gagnant actuellement, 0 si les blancs ont gagné et 1 si les noirs ont gagné
+        :return: Revoie -1 s'il n'y a pas de gagnant actuellement, 0 si les blancs ont gagné, 1 si les noirs ont gagné et 2 s'il y a égalité
         """
+        if self.coups_sans_prise >= 25:
+            return 2
         if len(coups_possibles(self.positions(), self.round_side)) == 0:
             if self.round_side:
                 return 0
@@ -107,38 +110,54 @@ class Plateau:
                 end_case = temp_coup[-1]
                 for i in range(len(temp_coup) - 1):
                     sub = int(temp_coup[i + 1]) - int(temp_coup[i])
-                    if abs(sub) == 11:
-                        if sub > 0:
-                            if ((int(temp_coup[i]) - 1) // 5) % 2:
-                                pion_mange.append(int(temp_coup[i]) + 5)
-                            else:
-                                pion_mange.append(int(temp_coup[i]) + 6)
-                        else:
-                            if ((int(temp_coup[i]) - 1) // 5) % 2:
-                                pion_mange.append(int(temp_coup[i]) - 6)
-                            else:
-                                pion_mange.append(int(temp_coup[i]) - 5)
-                    else:
-                        if sub > 0:
-                            if ((int(temp_coup[i]) - 1) // 5) % 2:
-                                pion_mange.append(int(temp_coup[i]) + 4)
-                            else:
-                                pion_mange.append(int(temp_coup[i]) + 5)
-                        else:
-                            if ((int(temp_coup[i]) - 1) // 5) % 2:
-                                pion_mange.append(int(temp_coup[i]) - 5)
-                            else:
-                                pion_mange.append(int(temp_coup[i]) - 4)
+                    if sub > 0:
+                        case = int(temp_coup[i])
+                        parity = (case - 1) // 5 % 2
+                        while case + (6 - parity) < 51:
+                            if case + (6 - parity) == int(temp_coup[i+1]):
+                                pion_mange.append(case)
+                                break
+                            case += (6 - parity)
+                            parity = (case - 1) // 5 % 2
+                        case = int(temp_coup[i])
+                        parity = (case - 1) // 5 % 2
+                        while case + (5 - parity) < 51:
+                            if case + (5 - parity) == int(temp_coup[i+1]):
+                                pion_mange.append(case)
+                                break
+                            case += (5 - parity)
+                            parity = (case - 1) // 5 % 2
+                    if sub < 0:
+                        case = int(temp_coup[i])
+                        parity = (case - 1) // 5 % 2
+                        while case - (5 + parity) > 0:
+                            if case - (5 + parity) == int(temp_coup[i+1]):
+                                pion_mange.append(case)
+                                break
+                            case -= (5 + parity)
+                            parity = (case - 1) // 5 % 2
+                        case = int(temp_coup[i])
+                        parity = (case - 1) // 5 % 2
+                        while case - (4 + parity) > 0:
+                            if case - (4 + parity) == int(temp_coup[i+1]):
+                                pion_mange.append(case)
+                                break
+                            case -= (4 + parity)
+                            parity = (case - 1) // 5 % 2
             self.move_point(int(start_case), int(end_case))
             for case in pion_mange:
                 self.move_point(int(case), 0)
+            if not pion_mange:
+                self.coups_sans_prise += 1
+            else:
+                self.coups_sans_prise = 0
             return True
         return False
 
 
 def coups_prises_pions(case: int, positions: dict, couleur=0, tree=None, parent=None) -> Tree:
     """
-    Cette fonction renvoie un arbre des prises possibles par un point.
+    Cette fonction renvoie un arbre des prises possibles par un pion.
     Cette fonction est récursive !
     :param case: Case du preneur.
     :param positions: Dictionnaire des positions des pions sur le plateau.
@@ -174,13 +193,131 @@ def coups_prises_pions(case: int, positions: dict, couleur=0, tree=None, parent=
     return tree
 
 
+def coup_prises_dames(case: int, positions: dict, couleur=0, tree=None, parent=None, disallowed_orientation=-1) -> Tree:
+    """
+    Cette fonction renvoie un arbre des prises possibles par une dame.
+    Cette fonction est récursive !
+    :param disallowed_orientation:
+    :param case: Case de départ de la dame.
+    :param positions: Positions des autres pions sur le plateau.
+    :param couleur: Couleur de la dame.
+    :param tree: Arbre binaire servant à la fonction récursive.
+    :param parent: Case parent servant à la fonction récursive.
+    :return: Renvoie un arbre binaire composé des coups possibles.
+    """
+    if tree is None:
+        tree = Tree()
+        tree.create_node(case, case)
+        parent = case
+    # En haut à gauche
+    copy_positions = positions.copy()
+    copy_case = case
+    if copy_case in copy_positions:
+        copy_positions.pop(copy_case)
+    parity = (copy_case - 1) // 5 % 2
+    while copy_case - (5 + parity) not in copy_positions and ((copy_case - 1) % 5 or parity == 0) and (
+            copy_case - (5 + parity)) > 0 and disallowed_orientation != 0:
+        copy_case -= (5 + parity)
+        parity = (copy_case - 1) // 5 % 2
+        if type(parent) != int:
+            new = f"{case}>{copy_case}"
+            try:
+                tree.create_node(new, new, parent=parent)
+            except treelib.exceptions.DuplicatedNodeIdError:
+                new += f"-{time.perf_counter()}"
+                tree.create_node(new, new, parent=parent)
+    if copy_case - (5 + parity) in copy_positions and copy_case - 11 not in copy_positions and (
+            (copy_case - 1) // 5 % 2) == ((copy_case - 12) // 5 % 2) and disallowed_orientation != 0 and copy_case - 11 > 0:
+        if copy_positions[copy_case - (5 + parity)][0] == couleur:
+            pass
+        copy_positions.pop(copy_case - (5 + parity))
+        copy_case -= 11
+        new_parent = f"{case}x{copy_case}"
+        try:
+            tree.create_node(new_parent, new_parent, parent=parent)
+        except treelib.exceptions.DuplicatedNodeIdError:
+            new_parent += f"-{time.perf_counter()}"
+            tree.create_node(new_parent, new_parent, parent=parent)
+        coup_prises_dames(copy_case, copy_positions, couleur, tree, new_parent, 3)
+    # En haut à droite
+    copy_positions = positions.copy()
+    copy_case = case
+    if copy_case in copy_positions:
+        copy_positions.pop(copy_case)
+    parity = (copy_case - 1) // 5 % 2
+    while copy_case - (4 + parity) not in copy_positions and (copy_case % 5 or parity == 1) and (
+            copy_case - (4 + parity)) > 0 and disallowed_orientation != 1:
+        copy_case -= (4 + parity)
+        parity = (copy_case - 1) // 5 % 2
+    if copy_case - (4 + parity) in copy_positions and copy_case - 9 not in copy_positions and (
+            (copy_case - 1) // 5 % 2) == ((copy_case - 10) // 5 % 2) and disallowed_orientation != 1 and copy_case - 9 > 0:
+        if copy_positions[copy_case - (4 + parity)][0] == couleur:
+            pass
+        copy_positions.pop(copy_case - (4 + parity))
+        copy_case -= 9
+        new_parent = f"{case}x{copy_case}"
+        try:
+            tree.create_node(new_parent, new_parent, parent=parent)
+        except treelib.exceptions.DuplicatedNodeIdError:
+            new_parent += f"-{time.perf_counter()}"
+            tree.create_node(new_parent, new_parent, parent=parent)
+        coup_prises_dames(copy_case, copy_positions, couleur, tree, new_parent, 2)
+    # En bas à gauche
+    copy_positions = positions.copy()
+    copy_case = case
+    if copy_case in copy_positions:
+        copy_positions.pop(copy_case)
+    parity = (copy_case - 1) // 5 % 2
+    while copy_case + (5 - parity) not in copy_positions and ((copy_case - 1) % 5 or parity == 0) and (
+            copy_case + (5 - parity)) < 51 and disallowed_orientation != 2:
+        copy_case += (5 - parity)
+        parity = (copy_case - 1) // 5 % 2
+    if copy_case + (5 - parity) in copy_positions and copy_case + 9 not in copy_positions and (
+            (copy_case - 1) // 5 % 2) == ((copy_case + 8) // 5 % 2) and disallowed_orientation != 2 and copy_case + 9 < 51:
+        if copy_positions[copy_case + (5 - parity)][0] == couleur:
+            pass
+        copy_positions.pop(copy_case + (5 - parity))
+        copy_case += 9
+        new_parent = f"{case}x{copy_case}"
+        try:
+            tree.create_node(new_parent, new_parent, parent=parent)
+        except treelib.exceptions.DuplicatedNodeIdError:
+            new_parent += f"-{time.perf_counter()}"
+            tree.create_node(new_parent, new_parent, parent=parent)
+        coup_prises_dames(copy_case, copy_positions, couleur, tree, new_parent, 1)
+    # En bas à droite
+    copy_positions = positions.copy()
+    copy_case = case
+    if copy_case in copy_positions:
+        copy_positions.pop(copy_case)
+    parity = (copy_case - 1) // 5 % 2
+    while copy_case + (6 - parity) not in copy_positions and (copy_case % 5 or parity == 1) and (
+            copy_case + (6 - parity)) < 51 and disallowed_orientation != 3:
+        copy_case += (6 - parity)
+        parity = (copy_case - 1) // 5 % 2
+    if copy_case + (6 - parity) in copy_positions and copy_case + 11 not in copy_positions and (
+            (copy_case - 1) // 5 % 2) == ((copy_case + 10) // 5 % 2) and disallowed_orientation != 3 and copy_case + 11 < 51:
+        if copy_positions[copy_case + (6 - parity)][0] == couleur:
+            pass
+        copy_positions.pop(copy_case + (6 - parity))
+        copy_case += 11
+        new_parent = f"{case}x{copy_case}"
+        try:
+            tree.create_node(new_parent, new_parent, parent=parent)
+        except treelib.exceptions.DuplicatedNodeIdError:
+            new_parent += f"-{time.perf_counter()}"
+            tree.create_node(new_parent, new_parent, parent=parent)
+        coup_prises_dames(copy_case, copy_positions, couleur, tree, new_parent, 0)
+    return tree
+
+
 def coups_avancer_pions(case: int, positions: dict, couleur=0) -> list:
     """
     Cette fonction cherche les coups ne permettant pas une prise par un point.
     :param case: Case du point qui va avancer.
     :param positions: Dictionnaire contenant les positions des points étant sur le plateau.
     :param couleur: Couleur de joueur.
-    :return: Revoie une liste contenant les coups possibles par le points.
+    :return: Revoie une liste contenant les coups possibles par les points.
     """
     coups = []
     modifier_couleur = 1
@@ -202,8 +339,7 @@ def coups_avancer_pions(case: int, positions: dict, couleur=0) -> list:
     return coups
 
 
-# IN BUILD
-def coups_avancer_dames(case, positions, couleur):
+def coups_avancer_dames(case, positions):
     coups = []
     # Avancer en haut à gauche
     case_temp = case
@@ -265,9 +401,22 @@ def coups_possibles(positions: dict, couleur=0):
                         if max_coups < len(path):
                             max_coups = len(path)
                         coups_tempo.append(path)
+            else:
+                tree = coup_prises_dames(case, positions, couleur)
+                if tree.depth():
+                    paths = tree.paths_to_leaves()
+                    for path in paths:
+                        if max_coups < len(path):
+                            max_coups = len(path)
+                            if '>' in path[-1]:
+                                max_coups -= 1
+                                if path[0:-1] not in coups_tempo:
+                                    coups_tempo.append(path[0:-1])
+                        coups_tempo.append(path)
+
     # Trie des coups pour prises
     for i in range(len(coups_tempo)):
-        if len(coups_tempo[i]) == max_coups:
+        if len(coups_tempo[i]) >= max_coups:
             for j in range(len(coups_tempo[i])):
                 if '-' in str(coups_tempo[i][j]):
                     split = str(coups_tempo[i][j]).split('-')
@@ -277,7 +426,10 @@ def coups_possibles(positions: dict, couleur=0):
     i = 0
     while i < len(coups) - 1:
         coup1 = coups[i].split('x')
-        coup2 = coups[i + 1].split('x')
+        if '>' in coups[i + 1]:
+            coup2 = coups[i + 1].split('>')
+        else:
+            coup2 = coups[i + 1].split('x')
         if coup1[-1] == coup2[0]:
             coups.remove(coups[i])
             coups.remove(coups[i])
@@ -295,11 +447,11 @@ def coups_possibles(positions: dict, couleur=0):
             if not positions[case][1] and positions[case][0] == couleur:
                 coups.extend(coups_avancer_pions(case, positions, couleur))
             elif positions[case][1] and positions[case][0] == couleur:
-                coups.extend(coups_avancer_dames(case, positions, couleur))
+                coups.extend(coups_avancer_dames(case, positions))
     return coups
 
 
-def affichage_plateau(plateau: Plateau, screen: Surface):
+def affichage_plateau(plateau: Plateau, screen: Surface, case_depart: int):
     positions = plateau.positions()
     white_case_color = (230, 240, 245)
     black_case_color = (25, 15, 10)
@@ -307,6 +459,7 @@ def affichage_plateau(plateau: Plateau, screen: Surface):
     black_pion_color = (129, 84, 71)
     white_dame_color = (217, 168, 42)
     black_dame_color = (159, 114, 101)
+    white_color = (255, 255, 255)
     screen_size = screen.get_size()
     case_size = screen_size[1] / 10
     start_x = (screen_size[0] - screen_size[1]) / 2
@@ -326,8 +479,13 @@ def affichage_plateau(plateau: Plateau, screen: Surface):
         pion_dame = positions[key][1]
         case_x = (key * 2 - 1) % 10
         case_y = (key - 1) * 2 // 10
+        real_case = case_x // 2 + 1 + 5 * case_y
         if case_y % 2:
             case_x -= 1
+        if real_case == case_depart:
+            pygame.draw.circle(screen, white_color,
+                               (start_x + case_x * case_size + case_size // 2, case_y * case_size + case_size // 2),
+                               case_size * 0.98 // 2)
         if pion_color:
             pygame.draw.circle(screen, black_pion_color,
                                (start_x + case_x * case_size + case_size // 2, case_y * case_size + case_size // 2),

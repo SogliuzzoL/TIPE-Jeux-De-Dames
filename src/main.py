@@ -1,3 +1,4 @@
+import datetime
 import random
 
 from plateau import *
@@ -16,6 +17,9 @@ if __name__ == "__main__":
     window_size = (1280, 720)
     window_name = "Jeu de dames"
     window_background_color = (236, 246, 249)
+    total_win_noir = 0
+    total_win_blanc = 0
+    nb_parties = 0
     running = True
     waiting = False
     """
@@ -23,7 +27,7 @@ if __name__ == "__main__":
     """
     plateau = Plateau()
     if test_dames:
-        plateau.pions = [Pion(28, 0, True), Pion(48, 1, True)]
+        plateau.pions = [Pion(32, 1, False), Pion(43, 0, True)]
     """
     Création de la fenêtre
     """
@@ -72,7 +76,13 @@ if __name__ == "__main__":
                     case_depart = 0
                     case_arrive = 0
         win = plateau.check_win()
-        if (win == 0 or win == 1) and not test_dames:
+        if win != -1 and not test_dames:
+            if win == 1:
+                total_win_noir += 1
+            elif win == 0:
+                total_win_blanc += 1
+            nb_parties += 1
+            print(f'[{datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S")}] - {str(float(total_win_blanc) / float(nb_parties) * 100)}% de parties gagnées par le blanc et {str(float(total_win_noir) / float(nb_parties) * 100)}% de parties gagnées par le noir (Blanc: {total_win_blanc}, Noir: {total_win_noir}, Total parties: {nb_parties})')
             plateau = Plateau()
         if fast_simu or human_vs_bot and plateau.round_side:
             coups = coups_possibles(plateau.positions(), plateau.round_side)
@@ -85,7 +95,8 @@ if __name__ == "__main__":
                     plateau.round_side = 0
                 else:
                     plateau.round_side = 1
-                print(f"Coup joué: {coup}")
+                if not fast_simu:
+                    print(f"Coup joué: {coup}")
                 waiting = False
         """
         Informe le joueur des coups possibles
@@ -94,16 +105,22 @@ if __name__ == "__main__":
         positions = plateau.positions()
         coups = coups_possibles(positions, plateau.round_side)
         font = pygame.font.SysFont(pygame.font.get_fonts()[0], 24)
+        text = font.render("Parties Gagnées :", True, (50, 50, 50))
+        screen.blit(text, (5, 24 * 0 + 5))
+        text = font.render(f"Blanc: {total_win_blanc}, Noirs: {total_win_noir}", True, (125, 125, 125))
+        screen.blit(text, (5, 24 * 1 + 5))
+        text = font.render(f"Nuls: {nb_parties - total_win_blanc - total_win_noir}, Total: {nb_parties}", True, (125, 125, 125))
+        screen.blit(text, (5, 24 * 2 + 5))
         text = font.render("Coups possibles :", True, (50, 50, 50))
-        screen.blit(text, (5, 5))
+        screen.blit(text, (5, 24 * 3 + 5))
         for i in range(1, len(coups) + 1):
             text = font.render(coups[i - 1], True, (125, 125, 125))
-            screen.blit(text, (10, 24 * i + 5))
+            screen.blit(text, (10, 24 * (i + 3) + 5))
         waiting = True
         """
         Modification graphique et mise à jour de la fenêtre
         """
-        affichage_plateau(plateau, screen)
+        affichage_plateau(plateau, screen, case_depart)
         pygame.display.update()
         if not fast_simu:
             clock.tick(game_fps)
