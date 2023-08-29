@@ -219,7 +219,7 @@ def coup_prises_dames(case: int, positions: dict, couleur=0, tree=None, parent=N
             copy_case - (5 + parity)) > 0 and disallowed_orientation != 0:
         copy_case -= (5 + parity)
         parity = (copy_case - 1) // 5 % 2
-        if type(parent) != int:
+        if disallowed_orientation == 3:
             new = f"{case}>{copy_case}"
             try:
                 tree.create_node(new, new, parent=parent)
@@ -228,17 +228,16 @@ def coup_prises_dames(case: int, positions: dict, couleur=0, tree=None, parent=N
                 tree.create_node(new, new, parent=parent)
     if copy_case - (5 + parity) in copy_positions and copy_case - 11 not in copy_positions and (
             (copy_case - 1) // 5 % 2) == ((copy_case - 12) // 5 % 2) and disallowed_orientation != 0 and copy_case - 11 > 0:
-        if copy_positions[copy_case - (5 + parity)][0] == couleur:
-            pass
-        copy_positions.pop(copy_case - (5 + parity))
-        copy_case -= 11
-        new_parent = f"{case}x{copy_case}"
-        try:
-            tree.create_node(new_parent, new_parent, parent=parent)
-        except treelib.exceptions.DuplicatedNodeIdError:
-            new_parent += f"-{time.perf_counter()}"
-            tree.create_node(new_parent, new_parent, parent=parent)
-        coup_prises_dames(copy_case, copy_positions, couleur, tree, new_parent, 3)
+        if copy_positions[copy_case - (5 + parity)][0] != couleur:
+            copy_positions.pop(copy_case - (5 + parity))
+            copy_case -= 11
+            new_parent = f"{case}x{copy_case}"
+            try:
+                tree.create_node(new_parent, new_parent, parent=parent)
+            except treelib.exceptions.DuplicatedNodeIdError:
+                new_parent += f"-{time.perf_counter()}"
+                tree.create_node(new_parent, new_parent, parent=parent)
+            coup_prises_dames(copy_case, copy_positions, couleur, tree, new_parent, 3)
     # En haut à droite
     copy_positions = positions.copy()
     copy_case = case
@@ -249,19 +248,25 @@ def coup_prises_dames(case: int, positions: dict, couleur=0, tree=None, parent=N
             copy_case - (4 + parity)) > 0 and disallowed_orientation != 1:
         copy_case -= (4 + parity)
         parity = (copy_case - 1) // 5 % 2
+        if disallowed_orientation == 2:
+            new = f"{case}>{copy_case}"
+            try:
+                tree.create_node(new, new, parent=parent)
+            except treelib.exceptions.DuplicatedNodeIdError:
+                new += f"-{time.perf_counter()}"
+                tree.create_node(new, new, parent=parent)
     if copy_case - (4 + parity) in copy_positions and copy_case - 9 not in copy_positions and (
             (copy_case - 1) // 5 % 2) == ((copy_case - 10) // 5 % 2) and disallowed_orientation != 1 and copy_case - 9 > 0:
-        if copy_positions[copy_case - (4 + parity)][0] == couleur:
-            pass
-        copy_positions.pop(copy_case - (4 + parity))
-        copy_case -= 9
-        new_parent = f"{case}x{copy_case}"
-        try:
-            tree.create_node(new_parent, new_parent, parent=parent)
-        except treelib.exceptions.DuplicatedNodeIdError:
-            new_parent += f"-{time.perf_counter()}"
-            tree.create_node(new_parent, new_parent, parent=parent)
-        coup_prises_dames(copy_case, copy_positions, couleur, tree, new_parent, 2)
+        if copy_positions[copy_case - (4 + parity)][0] != couleur:
+            copy_positions.pop(copy_case - (4 + parity))
+            copy_case -= 9
+            new_parent = f"{case}x{copy_case}"
+            try:
+                tree.create_node(new_parent, new_parent, parent=parent)
+            except treelib.exceptions.DuplicatedNodeIdError:
+                new_parent += f"-{time.perf_counter()}"
+                tree.create_node(new_parent, new_parent, parent=parent)
+            coup_prises_dames(copy_case, copy_positions, couleur, tree, new_parent, 2)
     # En bas à gauche
     copy_positions = positions.copy()
     copy_case = case
@@ -272,19 +277,25 @@ def coup_prises_dames(case: int, positions: dict, couleur=0, tree=None, parent=N
             copy_case + (5 - parity)) < 51 and disallowed_orientation != 2:
         copy_case += (5 - parity)
         parity = (copy_case - 1) // 5 % 2
+        if disallowed_orientation == 1:
+            new = f"{case}>{copy_case}"
+            try:
+                tree.create_node(new, new, parent=parent)
+            except treelib.exceptions.DuplicatedNodeIdError:
+                new += f"-{time.perf_counter()}"
+                tree.create_node(new, new, parent=parent)
     if copy_case + (5 - parity) in copy_positions and copy_case + 9 not in copy_positions and (
             (copy_case - 1) // 5 % 2) == ((copy_case + 8) // 5 % 2) and disallowed_orientation != 2 and copy_case + 9 < 51:
-        if copy_positions[copy_case + (5 - parity)][0] == couleur:
-            pass
-        copy_positions.pop(copy_case + (5 - parity))
-        copy_case += 9
-        new_parent = f"{case}x{copy_case}"
-        try:
-            tree.create_node(new_parent, new_parent, parent=parent)
-        except treelib.exceptions.DuplicatedNodeIdError:
-            new_parent += f"-{time.perf_counter()}"
-            tree.create_node(new_parent, new_parent, parent=parent)
-        coup_prises_dames(copy_case, copy_positions, couleur, tree, new_parent, 1)
+        if copy_positions[copy_case + (5 - parity)][0] != couleur:
+            copy_positions.pop(copy_case + (5 - parity))
+            copy_case += 9
+            new_parent = f"{case}x{copy_case}"
+            try:
+                tree.create_node(new_parent, new_parent, parent=parent)
+            except treelib.exceptions.DuplicatedNodeIdError:
+                new_parent += f"-{time.perf_counter()}"
+                tree.create_node(new_parent, new_parent, parent=parent)
+            coup_prises_dames(copy_case, copy_positions, couleur, tree, new_parent, 1)
     # En bas à droite
     copy_positions = positions.copy()
     copy_case = case
@@ -295,19 +306,25 @@ def coup_prises_dames(case: int, positions: dict, couleur=0, tree=None, parent=N
             copy_case + (6 - parity)) < 51 and disallowed_orientation != 3:
         copy_case += (6 - parity)
         parity = (copy_case - 1) // 5 % 2
+        if disallowed_orientation == 0:
+            new = f"{case}>{copy_case}"
+            try:
+                tree.create_node(new, new, parent=parent)
+            except treelib.exceptions.DuplicatedNodeIdError:
+                new += f"-{time.perf_counter()}"
+                tree.create_node(new, new, parent=parent)
     if copy_case + (6 - parity) in copy_positions and copy_case + 11 not in copy_positions and (
             (copy_case - 1) // 5 % 2) == ((copy_case + 10) // 5 % 2) and disallowed_orientation != 3 and copy_case + 11 < 51:
-        if copy_positions[copy_case + (6 - parity)][0] == couleur:
-            pass
-        copy_positions.pop(copy_case + (6 - parity))
-        copy_case += 11
-        new_parent = f"{case}x{copy_case}"
-        try:
-            tree.create_node(new_parent, new_parent, parent=parent)
-        except treelib.exceptions.DuplicatedNodeIdError:
-            new_parent += f"-{time.perf_counter()}"
-            tree.create_node(new_parent, new_parent, parent=parent)
-        coup_prises_dames(copy_case, copy_positions, couleur, tree, new_parent, 0)
+        if copy_positions[copy_case + (6 - parity)][0] != couleur:
+            copy_positions.pop(copy_case + (6 - parity))
+            copy_case += 11
+            new_parent = f"{case}x{copy_case}"
+            try:
+                tree.create_node(new_parent, new_parent, parent=parent)
+            except treelib.exceptions.DuplicatedNodeIdError:
+                new_parent += f"-{time.perf_counter()}"
+                tree.create_node(new_parent, new_parent, parent=parent)
+            coup_prises_dames(copy_case, copy_positions, couleur, tree, new_parent, 0)
     return tree
 
 
@@ -417,6 +434,8 @@ def coups_possibles(positions: dict, couleur=0):
     # Trie des coups pour prises
     for i in range(len(coups_tempo)):
         if len(coups_tempo[i]) >= max_coups:
+            if len(coups_tempo[i]) == max_coups and '>' in coups_tempo[i][-1]:
+                continue
             for j in range(len(coups_tempo[i])):
                 if '-' in str(coups_tempo[i][j]):
                     split = str(coups_tempo[i][j]).split('-')

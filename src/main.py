@@ -8,7 +8,7 @@ if __name__ == "__main__":
     Paramètre de la fenêtre
     """
     test_dames = False
-    fast_simu = False
+    fast_simu = True
     human_vs_bot = True
     game_fps = 60
     case_depart = 0
@@ -27,7 +27,7 @@ if __name__ == "__main__":
     """
     plateau = Plateau()
     if test_dames:
-        plateau.pions = [Pion(32, 1, False), Pion(43, 0, True)]
+        plateau.pions = [Pion(28, 1, False), Pion(13, 1, False), Pion(33, 0, True)]
     """
     Création de la fenêtre
     """
