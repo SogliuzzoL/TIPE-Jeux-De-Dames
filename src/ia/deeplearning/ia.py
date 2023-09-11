@@ -211,7 +211,7 @@ def start_training(model_start_load=None, model_end_load=None):
     """if True:
         expo = 1
         gen_mul = 200"""
-    if model_start_load is None and model_end_load is None:
+    if not(model_start_load is None or model_end_load is None):
         model_start = [model_start_load for _ in range(2 ** expo)]
         model_end = [model_end_load for _ in range(2 ** expo)]
     else:
