@@ -208,10 +208,11 @@ def training(model_start, model_end, n_gen):
 def start_training(model_start_load=None, model_end_load=None):
     expo = 3
     gen_mul = 100_000
-    """if True:
+    if True:
         expo = 1
-        gen_mul = 200"""
+        gen_mul = 200
     if not(model_start_load is None or model_end_load is None):
+        print("Upgrade actual model")
         model_start = [model_start_load for _ in range(2 ** expo)]
         model_end = [model_end_load for _ in range(2 ** expo)]
     else:
