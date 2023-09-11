@@ -1,15 +1,21 @@
 import datetime
+import os.path
 import random
 
 from plateau import *
+from ia.deeplearning.ia import *
 
 if __name__ == "__main__":
     """
     Paramètre de la fenêtre
     """
     test_dames = False
-    fast_simu = True
+    fast_simu = False
     human_vs_bot = True
+    ia = True
+    ia_training = True
+    create_new_model = False
+    model_start, model_end = None, None
     game_fps = 60
     case_depart = 0
     case_arrive = 0
@@ -27,7 +33,18 @@ if __name__ == "__main__":
     """
     plateau = Plateau()
     if test_dames:
-        plateau.pions = [Pion(28, 1, False), Pion(13, 1, False), Pion(33, 0, True)]
+        plateau.pions = [Pion(30, 0, True), Pion(19, 1, False), Pion(8, 1, False), Pion(18, 1, False)]
+    """
+    Création IA
+    """
+    if ia:
+        if create_new_model or not(os.path.isfile('model_start') and os.path.isfile('model_end')):
+            model_start, model_end = start_training()
+        else:
+            model_start, model_end = load_model()
+            if ia_training:
+                start_training(model_start, model_end)
+
     """
     Création de la fenêtre
     """
@@ -73,6 +90,7 @@ if __name__ == "__main__":
                                 plateau.round_side = 1
                             print(f"Coup joué: {coup}")
                             waiting = False
+                            break
                     case_depart = 0
                     case_arrive = 0
         win = plateau.check_win()
@@ -82,7 +100,8 @@ if __name__ == "__main__":
             elif win == 0:
                 total_win_blanc += 1
             nb_parties += 1
-            print(f'[{datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S")}] - {str(float(total_win_blanc) / float(nb_parties) * 100)}% de parties gagnées par le blanc et {str(float(total_win_noir) / float(nb_parties) * 100)}% de parties gagnées par le noir (Blanc: {total_win_blanc}, Noir: {total_win_noir}, Total parties: {nb_parties})')
+            print(
+                f'[{datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S")}] - {str(float(total_win_blanc) / float(nb_parties) * 100)}% de parties gagnées par le blanc et {str(float(total_win_noir) / float(nb_parties) * 100)}% de parties gagnées par le noir (Blanc: {total_win_blanc}, Noir: {total_win_noir}, Total parties: {nb_parties})')
             plateau = Plateau()
         if fast_simu or human_vs_bot and plateau.round_side:
             coups = coups_possibles(plateau.positions(), plateau.round_side)
@@ -90,6 +109,8 @@ if __name__ == "__main__":
                 plateau = Plateau()
             else:
                 coup = coups[random.randint(0, len(coups) - 1)]
+                if ia:
+                    coup = run(plateau, model_start, model_end)
                 plateau.jouer_coup(coup, plateau.round_side)
                 if plateau.round_side:
                     plateau.round_side = 0
@@ -104,18 +125,24 @@ if __name__ == "__main__":
         screen.fill(window_background_color)
         positions = plateau.positions()
         coups = coups_possibles(positions, plateau.round_side)
+        real_coup = display_coup(coups)
         font = pygame.font.SysFont(pygame.font.get_fonts()[0], 24)
         text = font.render("Parties Gagnées :", True, (50, 50, 50))
         screen.blit(text, (5, 24 * 0 + 5))
         text = font.render(f"Blanc: {total_win_blanc}, Noirs: {total_win_noir}", True, (125, 125, 125))
         screen.blit(text, (5, 24 * 1 + 5))
-        text = font.render(f"Nuls: {nb_parties - total_win_blanc - total_win_noir}, Total: {nb_parties}", True, (125, 125, 125))
+        text = font.render(f"Nuls: {nb_parties - total_win_blanc - total_win_noir}, Total: {nb_parties}", True,
+                           (125, 125, 125))
         screen.blit(text, (5, 24 * 2 + 5))
-        text = font.render("Coups possibles :", True, (50, 50, 50))
+        text = font.render("Coup conseillé :", True, (50, 50, 50))
         screen.blit(text, (5, 24 * 3 + 5))
-        for i in range(1, len(coups) + 1):
-            text = font.render(coups[i - 1], True, (125, 125, 125))
-            screen.blit(text, (10, 24 * (i + 3) + 5))
+        text = font.render(f'IA: {display_coup([run(plateau, model_start, model_end)])[0]}', True, (125, 125, 125))
+        screen.blit(text, (5, 24 * 4 + 5))
+        text = font.render("Coups possibles :", True, (50, 50, 50))
+        screen.blit(text, (5, 24 * 5 + 5))
+        for i in range(1, len(real_coup) + 1):
+            text = font.render(real_coup[i - 1], True, (125, 125, 125))
+            screen.blit(text, (10, 24 * (i + 5) + 5))
         waiting = True
         """
         Modification graphique et mise à jour de la fenêtre
