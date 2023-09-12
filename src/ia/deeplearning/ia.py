@@ -27,19 +27,15 @@ class MLP(Module):
         super(MLP, self).__init__()
         # input to first hidden layer
         self.hidden1 = Linear(n_inputs, n_inputs)
-        kaiming_uniform_(self.hidden1.weight)
         self.act1 = Sigmoid()
         # second hidden layer
         self.hidden2 = Linear(n_inputs, n_inputs // 2)
-        kaiming_uniform_(self.hidden2.weight)
         self.act2 = Sigmoid()
         # third hidden layer and output
         self.hidden3 = Linear(n_inputs // 2, n_inputs // 2)
-        xavier_uniform_(self.hidden3.weight)
         self.act3 = Sigmoid()
         # third hidden layer and output
         self.hidden4 = Linear(n_inputs // 2, 50)
-        xavier_uniform_(self.hidden3.weight)
         self.act4 = Sigmoid()
 
     # forward propagate input
@@ -100,8 +96,9 @@ def run(plateau, model_start_case: MLP, model_end_case: MLP):
             y_best_start = (i + 1, y_start[0][i])
     y_best_end = (0, 0)
     for i in range(50):
-        if i + 1 in coup_dict[y_best_start[0]] and y_end[0][i] > y_best_end[1]:
-            y_best_end = (i + 1, y_end[0][i])
+        if coup_dict != {}:
+            if i + 1 in coup_dict[y_best_start[0]] and y_end[0][i] > y_best_end[1]:
+                y_best_end = (i + 1, y_end[0][i])
     real_coup = ''
     for coup in coups:
         if coup.startswith(str(y_best_start[0])) and coup.endswith(str(y_best_end[0])):
@@ -128,26 +125,34 @@ def mutation(model_a: MLP, model_b: MLP, rate: float, percent: float):
         for j in range(len(model_a.hidden1.weight.data[i])):
             if random.random() < rate:
                 model_a.hidden1.weight.data[i][j] = model_b.hidden1.weight.data[i][j]
+                model_a.hidden1.bias.data[i][j] = model_b.hidden1.bias.data[i][j]
             if random.random() < percent:
                 model_a.hidden1.weight.data[i][j] = torch.rand((1, 1))
+                model_a.hidden1.bias.data[i][j] = torch.rand((1, 1))
     for i in range(len(model_a.hidden2.weight.data)):
         for j in range(len(model_a.hidden2.weight.data[i])):
             if random.random() < rate:
                 model_a.hidden2.weight.data[i][j] = model_b.hidden2.weight.data[i][j]
+                model_a.hidden2.bias.data[i][j] = model_b.hidden2.bias.data[i][j]
             if random.random() < percent:
                 model_a.hidden2.weight.data[i][j] = torch.rand((1, 1))
+                model_a.hidden2.bias.data[i][j] = torch.rand((1, 1))
     for i in range(len(model_a.hidden3.weight.data)):
         for j in range(len(model_a.hidden3.weight.data[i])):
             if random.random() < rate:
                 model_a.hidden3.weight.data[i][j] = model_b.hidden3.weight.data[i][j]
+                model_a.hidden3.bias.data[i][j] = model_b.hidden3.bias.data[i][j]
             if random.random() < percent:
                 model_a.hidden3.weight.data[i][j] = torch.rand((1, 1))
+                model_a.hidden3.bias.data[i][j] = torch.rand((1, 1))
     for i in range(len(model_a.hidden4.weight.data)):
         for j in range(len(model_a.hidden4.weight.data[i])):
             if random.random() < rate:
                 model_a.hidden4.weight.data[i][j] = model_b.hidden4.weight.data[i][j]
+                model_a.hidden4.bias.data[i][j] = model_b.hidden4.bias.data[i][j]
             if random.random() < percent:
                 model_a.hidden4.weight.data[i][j] = torch.rand((1, 1))
+                model_a.hidden4.bias.data[i][j] = torch.rand((1, 1))
 
 
 def training(model_start, model_end, n_gen):

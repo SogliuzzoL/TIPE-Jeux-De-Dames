@@ -9,7 +9,7 @@ if __name__ == "__main__":
     """
     Paramètre de la fenêtre
     """
-    test_dames = False
+    test_dames = True
     fast_simu = False
     human_vs_bot = True
     ia = True
@@ -33,7 +33,7 @@ if __name__ == "__main__":
     """
     plateau = Plateau()
     if test_dames:
-        plateau.pions = [Pion(30, 0, True), Pion(19, 1, False), Pion(8, 1, False), Pion(18, 1, False)]
+        plateau.pions = [Pion(30, 1, True), Pion(19, 0, False), Pion(8, 0, False), Pion(18, 0, False)]
     """
     Création IA
     """
@@ -94,7 +94,7 @@ if __name__ == "__main__":
                     case_depart = 0
                     case_arrive = 0
         win = plateau.check_win()
-        if win != -1 and not test_dames:
+        if win != -1:
             if win == 1:
                 total_win_noir += 1
             elif win == 0:
@@ -136,7 +136,9 @@ if __name__ == "__main__":
         screen.blit(text, (5, 24 * 2 + 5))
         text = font.render("Coup conseillé :", True, (50, 50, 50))
         screen.blit(text, (5, 24 * 3 + 5))
-        text = font.render(f'IA: {display_coup([run(plateau, model_start, model_end)])[0]}', True, (125, 125, 125))
+        ia_coups = display_coup([run(plateau, model_start, model_end)])
+        if len(ia_coups) == 0:
+            text = font.render(f'IA: {ia_coups[0]}', True, (125, 125, 125))
         screen.blit(text, (5, 24 * 4 + 5))
         text = font.render("Coups possibles :", True, (50, 50, 50))
         screen.blit(text, (5, 24 * 5 + 5))
