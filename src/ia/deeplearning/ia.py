@@ -121,38 +121,52 @@ def simu(player_white: tuple, player_black: tuple) -> int:
 
 
 def mutation(model_a: MLP, model_b: MLP, rate: float, percent: float):
+    # Bias Mutation
+    for i in range(len(model_a.hidden1.bias.data)):
+        if random.random() < rate:
+            model_a.hidden1.bias.data[i] = model_b.hidden1.bias.data[i]
+        if random.random() < percent:
+            model_a.hidden1.bias.data[i] = torch.rand((1, 1))
+    for i in range(len(model_a.hidden2.bias.data)):
+        if random.random() < rate:
+            model_a.hidden2.bias.data[i] = model_b.hidden2.bias.data[i]
+        if random.random() < percent:
+            model_a.hidden2.bias.data[i] = torch.rand((1, 1))
+    for i in range(len(model_a.hidden3.bias.data)):
+        if random.random() < rate:
+            model_a.hidden3.bias.data[i] = model_b.hidden3.bias.data[i]
+        if random.random() < percent:
+            model_a.hidden3.bias.data[i] = torch.rand((1, 1))
+    for i in range(len(model_a.hidden4.bias.data)):
+        if random.random() < rate:
+            model_a.hidden4.bias.data[i] = model_b.hidden4.bias.data[i]
+        if random.random() < percent:
+            model_a.hidden4.bias.data[i] = torch.rand((1, 1))
+    # Weights mutation
     for i in range(len(model_a.hidden1.weight.data)):
         for j in range(len(model_a.hidden1.weight.data[i])):
             if random.random() < rate:
                 model_a.hidden1.weight.data[i][j] = model_b.hidden1.weight.data[i][j]
-                model_a.hidden1.bias.data[i][j] = model_b.hidden1.bias.data[i][j]
             if random.random() < percent:
                 model_a.hidden1.weight.data[i][j] = torch.rand((1, 1))
-                model_a.hidden1.bias.data[i][j] = torch.rand((1, 1))
     for i in range(len(model_a.hidden2.weight.data)):
         for j in range(len(model_a.hidden2.weight.data[i])):
             if random.random() < rate:
                 model_a.hidden2.weight.data[i][j] = model_b.hidden2.weight.data[i][j]
-                model_a.hidden2.bias.data[i][j] = model_b.hidden2.bias.data[i][j]
             if random.random() < percent:
                 model_a.hidden2.weight.data[i][j] = torch.rand((1, 1))
-                model_a.hidden2.bias.data[i][j] = torch.rand((1, 1))
     for i in range(len(model_a.hidden3.weight.data)):
         for j in range(len(model_a.hidden3.weight.data[i])):
             if random.random() < rate:
                 model_a.hidden3.weight.data[i][j] = model_b.hidden3.weight.data[i][j]
-                model_a.hidden3.bias.data[i][j] = model_b.hidden3.bias.data[i][j]
             if random.random() < percent:
                 model_a.hidden3.weight.data[i][j] = torch.rand((1, 1))
-                model_a.hidden3.bias.data[i][j] = torch.rand((1, 1))
     for i in range(len(model_a.hidden4.weight.data)):
         for j in range(len(model_a.hidden4.weight.data[i])):
             if random.random() < rate:
                 model_a.hidden4.weight.data[i][j] = model_b.hidden4.weight.data[i][j]
-                model_a.hidden4.bias.data[i][j] = model_b.hidden4.bias.data[i][j]
             if random.random() < percent:
                 model_a.hidden4.weight.data[i][j] = torch.rand((1, 1))
-                model_a.hidden4.bias.data[i][j] = torch.rand((1, 1))
 
 
 def training(model_start, model_end, n_gen):
@@ -216,7 +230,7 @@ def start_training(model_start_load=None, model_end_load=None):
     """if True:
         expo = 1
         gen_mul = 200"""
-    if not(model_start_load is None or model_end_load is None):
+    if not (model_start_load is None or model_end_load is None):
         print("Upgrade actual model")
         model_start = [model_start_load for _ in range(2 ** expo)]
         model_end = [model_end_load for _ in range(2 ** expo)]
