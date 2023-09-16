@@ -71,7 +71,10 @@ def run(plateau, model_start_case: MLP, model_end_case: MLP):
     row = [0 for _ in range(51)]
     for i in range(51):
         if i == 0:
-            row[i] = plateau.round_side
+            if plateau.round_side == 1:
+                row[i] = -1
+            else:
+                row[i] = 1
         elif i in positions:
             if positions[i][0] == 0:
                 if not positions[i][1]:
@@ -238,9 +241,9 @@ def training(model_start, model_end, n_gen):
 def start_training(model_start_load=None, model_end_load=None):
     expo = 3
     gen_mul = 100_000
-    """if True:
+    if True:
         expo = 1
-        gen_mul = 200"""
+        gen_mul = 200
     if not (model_start_load is None or model_end_load is None):
         print("Upgrade actual model")
         model_start = [model_start_load for _ in range(2 ** expo)]
