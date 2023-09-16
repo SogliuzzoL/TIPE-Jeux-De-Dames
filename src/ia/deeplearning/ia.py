@@ -68,12 +68,21 @@ def predict(row, model):
 
 def run(plateau, model_start_case: MLP, model_end_case: MLP):
     positions = plateau.positions()
-    row = [0.5 for _ in range(51)]
+    row = [0 for _ in range(51)]
     for i in range(51):
         if i == 0:
             row[i] = plateau.round_side
         elif i in positions:
-            row[i] = positions[i][0]
+            if positions[i][0] == 0:
+                if not positions[i][1]:
+                    row[i] = 0.5
+                else:
+                    row[i] = 1
+            else:
+                if not positions[i][1]:
+                    row[i] = -0.5
+                else:
+                    row[i] = -1
 
     y_start = predict(row, model_start_case)
     y_end = predict(row, model_end_case)
@@ -102,8 +111,10 @@ def run(plateau, model_start_case: MLP, model_end_case: MLP):
     real_coup = ''
     for coup in coups:
         if coup.startswith(str(y_best_start[0])) and coup.endswith(str(y_best_end[0])):
-            real_coup = coup
-            break
+            if (len(str(y_best_end[0])) == 1 and (coup[-2] == 'x' or coup[-2] == '-')) or (
+                    len(str(y_best_end[0])) == 2 and (coup[-3] == 'x' or coup[-3] == '-')):
+                real_coup = coup
+                break
     return real_coup
 
 

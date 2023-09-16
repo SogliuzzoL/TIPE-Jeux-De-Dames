@@ -14,7 +14,7 @@ if __name__ == "__main__":
     human_vs_bot = True
     ia = True
     ia_training = False
-    ia_infinite_training = True
+    ia_infinite_training = False
     create_new_model = False
     model_start, model_end = None, None
     game_fps = 60
@@ -86,14 +86,15 @@ if __name__ == "__main__":
                     coups = coups_possibles(plateau.positions(), plateau.round_side)
                     for coup in coups:
                         if coup.startswith(str(case_depart)) and coup.endswith(str(case_arrive)):
-                            plateau.jouer_coup(coup, plateau.round_side)
-                            if plateau.round_side:
-                                plateau.round_side = 0
-                            else:
-                                plateau.round_side = 1
-                            print(f"Coup joué: {coup}")
-                            waiting = False
-                            break
+                            if (len(str(case_arrive)) == 1 and (coup[-2] == 'x' or coup[-2] == '-')) or (len(str(case_arrive)) == 2 and (coup[-3] == 'x' or coup[-3] == '-')):
+                                plateau.jouer_coup(coup, plateau.round_side)
+                                if plateau.round_side:
+                                    plateau.round_side = 0
+                                else:
+                                    plateau.round_side = 1
+                                print(f"Coup joué: {coup}")
+                                waiting = False
+                                break
                     case_depart = 0
                     case_arrive = 0
         win = plateau.check_win()
