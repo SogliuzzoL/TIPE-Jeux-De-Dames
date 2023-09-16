@@ -13,8 +13,8 @@ if __name__ == "__main__":
     fast_simu = False
     human_vs_bot = True
     ia = True
-    ia_training = False
-    ia_infinite_training = False
+    ia_training = True
+    ia_infinite_training = True
     create_new_model = False
     model_start, model_end = None, None
     game_fps = 60

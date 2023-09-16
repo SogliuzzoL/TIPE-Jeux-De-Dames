@@ -3,7 +3,7 @@ import random
 
 import torch
 from torch import Tensor
-from torch.nn import Module, Linear, ReLU, Sigmoid
+from torch.nn import Module, Linear, ReLU, Sigmoid, Softsign, Tanh
 from torch.nn.init import kaiming_uniform_, xavier_uniform_
 from torch.utils.tensorboard import SummaryWriter
 
@@ -27,16 +27,16 @@ class MLP(Module):
         super(MLP, self).__init__()
         # input to first hidden layer
         self.hidden1 = Linear(n_inputs, n_inputs)
-        self.act1 = Sigmoid()
+        self.act1 = Tanh()
         # second hidden layer
-        self.hidden2 = Linear(n_inputs, n_inputs // 2)
-        self.act2 = Sigmoid()
+        self.hidden2 = Linear(n_inputs, n_inputs)
+        self.act2 = Softsign()
         # third hidden layer and output
-        self.hidden3 = Linear(n_inputs // 2, n_inputs // 2)
-        self.act3 = Sigmoid()
+        self.hidden3 = Linear(n_inputs, n_inputs)
+        self.act3 = Tanh()
         # third hidden layer and output
-        self.hidden4 = Linear(n_inputs // 2, 50)
-        self.act4 = Sigmoid()
+        self.hidden4 = Linear(n_inputs, 50)
+        self.act4 = Softsign()
 
     # forward propagate input
     def forward(self, X):
@@ -104,12 +104,12 @@ def run(plateau, model_start_case: MLP, model_end_case: MLP):
 
     y_best_start = (0, 0)
     for i in range(50):
-        if i + 1 in coup_dict and y_start[0][i] > y_best_start[1]:
+        if i + 1 in coup_dict and abs(y_start[0][i]) > abs(y_best_start[1]):
             y_best_start = (i + 1, y_start[0][i])
     y_best_end = (0, 0)
     for i in range(50):
         if coup_dict != {}:
-            if i + 1 in coup_dict[y_best_start[0]] and y_end[0][i] > y_best_end[1]:
+            if i + 1 in coup_dict[y_best_start[0]] and abs(y_end[0][i]) > abs(y_best_end[1]):
                 y_best_end = (i + 1, y_end[0][i])
     real_coup = ''
     for coup in coups:
@@ -239,11 +239,8 @@ def training(model_start, model_end, n_gen):
 
 
 def start_training(model_start_load=None, model_end_load=None):
-    expo = 3
-    gen_mul = 100_000
-    if True:
-        expo = 1
-        gen_mul = 200
+    expo = 2
+    gen_mul = 10_000
     if not (model_start_load is None or model_end_load is None):
         print("Upgrade actual model")
         model_start = [model_start_load for _ in range(2 ** expo)]
