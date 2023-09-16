@@ -9,11 +9,12 @@ if __name__ == "__main__":
     """
     Paramètre de la fenêtre
     """
-    test_dames = True
+    test_dames = False
     fast_simu = False
     human_vs_bot = True
     ia = True
-    ia_training = True
+    ia_training = False
+    ia_infinite_training = True
     create_new_model = False
     model_start, model_end = None, None
     game_fps = 60
@@ -43,8 +44,10 @@ if __name__ == "__main__":
         else:
             model_start, model_end = load_model()
             if ia_training:
-                start_training(model_start, model_end)
+                model_start, model_end = start_training(model_start, model_end)
 
+    while ia_infinite_training:
+        model_start, model_end = start_training(model_start, model_end)
     """
     Création de la fenêtre
     """
@@ -137,9 +140,9 @@ if __name__ == "__main__":
         text = font.render("Coup conseillé :", True, (50, 50, 50))
         screen.blit(text, (5, 24 * 3 + 5))
         ia_coups = display_coup([run(plateau, model_start, model_end)])
-        if len(ia_coups) == 0:
+        if len(ia_coups) != 0:
             text = font.render(f'IA: {ia_coups[0]}', True, (125, 125, 125))
-        screen.blit(text, (5, 24 * 4 + 5))
+            screen.blit(text, (5, 24 * 4 + 5))
         text = font.render("Coups possibles :", True, (50, 50, 50))
         screen.blit(text, (5, 24 * 5 + 5))
         for i in range(1, len(real_coup) + 1):
