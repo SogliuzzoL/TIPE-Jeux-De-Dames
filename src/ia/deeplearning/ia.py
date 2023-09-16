@@ -140,47 +140,47 @@ def mutation(model_a: MLP, model_b: MLP, rate: float, percent: float):
         if random.random() < rate:
             model_a.hidden1.bias.data[i] = model_b.hidden1.bias.data[i]
         if random.random() < percent:
-            model_a.hidden1.bias.data[i] = torch.rand((1, 1))
+            model_a.hidden1.bias.data[i] = random.randint(-99_999, 99_999)/100_000
     for i in range(len(model_a.hidden2.bias.data)):
         if random.random() < rate:
             model_a.hidden2.bias.data[i] = model_b.hidden2.bias.data[i]
         if random.random() < percent:
-            model_a.hidden2.bias.data[i] = torch.rand((1, 1))
+            model_a.hidden2.bias.data[i] = random.randint(-99_999, 99_999)/100_000
     for i in range(len(model_a.hidden3.bias.data)):
         if random.random() < rate:
             model_a.hidden3.bias.data[i] = model_b.hidden3.bias.data[i]
         if random.random() < percent:
-            model_a.hidden3.bias.data[i] = torch.rand((1, 1))
+            model_a.hidden3.bias.data[i] = random.randint(-99_999, 99_999)/100_000
     for i in range(len(model_a.hidden4.bias.data)):
         if random.random() < rate:
             model_a.hidden4.bias.data[i] = model_b.hidden4.bias.data[i]
         if random.random() < percent:
-            model_a.hidden4.bias.data[i] = torch.rand((1, 1))
+            model_a.hidden4.bias.data[i] = random.randint(-99_999, 99_999)/100_000
     # Weights mutation
     for i in range(len(model_a.hidden1.weight.data)):
         for j in range(len(model_a.hidden1.weight.data[i])):
             if random.random() < rate:
                 model_a.hidden1.weight.data[i][j] = model_b.hidden1.weight.data[i][j]
             if random.random() < percent:
-                model_a.hidden1.weight.data[i][j] = torch.rand((1, 1))
+                model_a.hidden1.weight.data[i][j] = random.randint(-99_999, 99_999)/100_000
     for i in range(len(model_a.hidden2.weight.data)):
         for j in range(len(model_a.hidden2.weight.data[i])):
             if random.random() < rate:
                 model_a.hidden2.weight.data[i][j] = model_b.hidden2.weight.data[i][j]
             if random.random() < percent:
-                model_a.hidden2.weight.data[i][j] = torch.rand((1, 1))
+                model_a.hidden2.weight.data[i][j] = random.randint(-99_999, 99_999)/100_000
     for i in range(len(model_a.hidden3.weight.data)):
         for j in range(len(model_a.hidden3.weight.data[i])):
             if random.random() < rate:
                 model_a.hidden3.weight.data[i][j] = model_b.hidden3.weight.data[i][j]
             if random.random() < percent:
-                model_a.hidden3.weight.data[i][j] = torch.rand((1, 1))
+                model_a.hidden3.weight.data[i][j] = random.randint(-99_999, 99_999)/100_000
     for i in range(len(model_a.hidden4.weight.data)):
         for j in range(len(model_a.hidden4.weight.data[i])):
             if random.random() < rate:
                 model_a.hidden4.weight.data[i][j] = model_b.hidden4.weight.data[i][j]
             if random.random() < percent:
-                model_a.hidden4.weight.data[i][j] = torch.rand((1, 1))
+                model_a.hidden4.weight.data[i][j] = random.randint(-99_999, 99_999)/100_000
 
 
 def training(model_start, model_end, n_gen):
