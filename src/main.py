@@ -1,9 +1,7 @@
-import datetime
 import os.path
-import random
 
+from src.bots.ia import *
 from plateau import *
-from ia.deeplearning.ia import *
 
 if __name__ == "__main__":
     """
@@ -13,8 +11,8 @@ if __name__ == "__main__":
     fast_simu = False
     human_vs_bot = True
     ia = True
-    ia_training = True
-    ia_infinite_training = True
+    ia_training = False
+    ia_infinite_training = False
     create_new_model = False
     model_start, model_end = None, None
     game_fps = 60
@@ -114,7 +112,7 @@ if __name__ == "__main__":
             else:
                 coup = coups[random.randint(0, len(coups) - 1)]
                 if ia:
-                    coup = run(plateau, model_start, model_end)
+                    coup = run_ia(plateau, model_start, model_end)
                 plateau.jouer_coup(coup, plateau.round_side)
                 if plateau.round_side:
                     plateau.round_side = 0
@@ -140,7 +138,7 @@ if __name__ == "__main__":
         screen.blit(text, (5, 24 * 2 + 5))
         text = font.render("Coup conseillé :", True, (50, 50, 50))
         screen.blit(text, (5, 24 * 3 + 5))
-        ia_coups = display_coup([run(plateau, model_start, model_end)])
+        ia_coups = display_coup([run_ia(plateau, model_start, model_end)])
         if len(ia_coups) != 0:
             text = font.render(f'IA: {ia_coups[0]}', True, (125, 125, 125))
             screen.blit(text, (5, 24 * 4 + 5))

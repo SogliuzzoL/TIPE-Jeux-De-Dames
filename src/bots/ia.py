@@ -1,13 +1,11 @@
 import datetime
 import random
 
+import numpy
 import torch
-from torch import Tensor
-from torch.nn import Module, Linear, ReLU, Sigmoid, Softsign, Tanh
-from torch.nn.init import kaiming_uniform_, xavier_uniform_
-from torch.utils.tensorboard import SummaryWriter
-
 from plateau import Plateau, coups_possibles
+from torch import Tensor
+from torch.nn import Module, Linear, Softsign, Tanh
 
 # Get cpu, gpu or mps device for training.
 print(f"Cuda available: {torch.cuda.is_available()}")
@@ -20,53 +18,55 @@ print(f"Using {device} device")
 torch.set_default_device(device)
 
 
-# model definition
-class MLP(Module):
-    # define model elements
+class Model(Module):
     def __init__(self, n_inputs):
-        super(MLP, self).__init__()
-        # input to first hidden layer
-        self.hidden1 = Linear(n_inputs, n_inputs)
+        """
+        :param n_inputs: Nombre d'entrées que le model aura
+        """
+        super(Model, self).__init__()
+        self.hidden1 = Linear(n_inputs, 10*n_inputs)
         self.act1 = Tanh()
-        # second hidden layer
-        self.hidden2 = Linear(n_inputs, n_inputs)
+        self.hidden2 = Linear(10*n_inputs, 10*n_inputs)
         self.act2 = Softsign()
-        # third hidden layer and output
-        self.hidden3 = Linear(n_inputs, n_inputs)
+        self.hidden3 = Linear(10*n_inputs, 10*n_inputs)
         self.act3 = Tanh()
-        # third hidden layer and output
-        self.hidden4 = Linear(n_inputs, 50)
+        self.hidden4 = Linear(10*n_inputs, 50)
         self.act4 = Softsign()
 
-    # forward propagate input
-    def forward(self, X):
-        # input to first hidden layer
-        X = self.hidden1(X)
-        X = self.act1(X)
-        # second hidden layer
-        X = self.hidden2(X)
-        X = self.act2(X)
-        # third hidden layer and output
-        X = self.hidden3(X)
-        X = self.act3(X)
-        # fourth hidden layer and output
-        X = self.hidden4(X)
-        X = self.act4(X)
-        return X
+    def forward(self, data):
+        """
+        :param data: Données d'entrées servant à calculer les données de sorties
+        :return: Renvoie les données de sorties
+        """
+        data = self.hidden1(data)
+        data = self.act1(data)
+        data = self.hidden2(data)
+        data = self.act2(data)
+        data = self.hidden3(data)
+        data = self.act3(data)
+        data = self.hidden4(data)
+        data = self.act4(data)
+        return data
 
 
-# make a class prediction for one row of data
-def predict(row, model):
-    # convert row to data
-    row = Tensor([row])
-    # make prediction
-    yhat = model(row)
-    # retrieve numpy array
-    yhat = yhat.detach().numpy()
-    return yhat
+def predict_ia(row, model) -> numpy.ndarray:
+    """
+    :param row: Liste des données d'entrée
+    :param model: Model à utiliser
+    :return: Renvoie une liste contenant la sortie du model
+    """
+    predicted_datas = model(Tensor(row))
+    predicted_datas = predicted_datas.detach().numpy()
+    return predicted_datas
 
 
-def run(plateau, model_start_case: MLP, model_end_case: MLP):
+def run_ia(plateau, model_start_case: Model, model_end_case: Model) -> str:
+    """
+    :param plateau: Plateau de jeu
+    :param model_start_case: Model permettant de choisir la case de départ
+    :param model_end_case: Model permettant de choisir la case d'arrivée
+    :return: Une chaîne de caractère contenant le coup à jouer
+    """
     positions = plateau.positions()
     row = [0 for _ in range(51)]
     for i in range(51):
@@ -87,8 +87,8 @@ def run(plateau, model_start_case: MLP, model_end_case: MLP):
                 else:
                     row[i] = -1
 
-    y_start = predict(row, model_start_case)
-    y_end = predict(row, model_end_case)
+    y_start = predict_ia(row, model_start_case)
+    y_end = predict_ia(row, model_end_case)
     coups = coups_possibles(positions, plateau.round_side)
 
     coup_dict = {}
@@ -104,13 +104,13 @@ def run(plateau, model_start_case: MLP, model_end_case: MLP):
 
     y_best_start = (0, 0)
     for i in range(50):
-        if i + 1 in coup_dict and abs(y_start[0][i]) > abs(y_best_start[1]):
-            y_best_start = (i + 1, y_start[0][i])
+        if i + 1 in coup_dict and abs(y_start[i]) > abs(y_best_start[1]):
+            y_best_start = (i + 1, y_start[i])
     y_best_end = (0, 0)
     for i in range(50):
         if coup_dict != {}:
-            if i + 1 in coup_dict[y_best_start[0]] and abs(y_end[0][i]) > abs(y_best_end[1]):
-                y_best_end = (i + 1, y_end[0][i])
+            if i + 1 in coup_dict[y_best_start[0]] and abs(y_end[i]) > abs(y_best_end[1]):
+                y_best_end = (i + 1, y_end[i])
     real_coup = ''
     for coup in coups:
         if coup.startswith(str(y_best_start[0])) and coup.endswith(str(y_best_end[0])):
@@ -121,76 +121,71 @@ def run(plateau, model_start_case: MLP, model_end_case: MLP):
     return real_coup
 
 
-def simu(player_white: tuple, player_black: tuple) -> int:
+def simulation_ia(player_white: tuple, player_black: tuple) -> int:
+    """
+    :param player_white: Tuple contenant (model_start, model_end) pour le joueur blanc
+    :param player_black: Tuple contenant (model_start, model_end) pour le joueur noir
+    :return: Renvoie 0 si les blancs ont gagné, 1 si les noirs ont gagné et 2 s'il y a égalité
+    """
     plateau = Plateau()
     while plateau.check_win() == -1:
         if plateau.round_side == 0:
-            plateau.jouer_coup(run(plateau, player_white[0], player_white[1]), 0)
+            plateau.jouer_coup(run_ia(plateau, player_white[0], player_white[1]), 0)
             plateau.round_side = 1
         else:
-            plateau.jouer_coup(run(plateau, player_black[0], player_black[1]), 1)
+            plateau.jouer_coup(run_ia(plateau, player_black[0], player_black[1]), 1)
             plateau.round_side = 0
     win = plateau.check_win()
     return win
 
 
-def mutation(model_a: MLP, model_b: MLP, rate: float, percent: float):
+def mutation(model_a: Model, model_b: Model, rate: float, percent: float):
+    """
+    :param model_a: Model à muter
+    :param model_b: Model servant à la mutation
+    :param rate: Ratio d'emprunt génétique du model A au model B
+    :param percent: Pourcentage d'une mutation aléatoire
+    :return: Ne retourne rien
+    """
     # Bias Mutation
-    for i in range(len(model_a.hidden1.bias.data)):
-        if random.random() < rate:
-            model_a.hidden1.bias.data[i] = model_b.hidden1.bias.data[i]
-        if random.random() < percent:
-            model_a.hidden1.bias.data[i] = random.randint(-99_999, 99_999)/100_000
-    for i in range(len(model_a.hidden2.bias.data)):
-        if random.random() < rate:
-            model_a.hidden2.bias.data[i] = model_b.hidden2.bias.data[i]
-        if random.random() < percent:
-            model_a.hidden2.bias.data[i] = random.randint(-99_999, 99_999)/100_000
-    for i in range(len(model_a.hidden3.bias.data)):
-        if random.random() < rate:
-            model_a.hidden3.bias.data[i] = model_b.hidden3.bias.data[i]
-        if random.random() < percent:
-            model_a.hidden3.bias.data[i] = random.randint(-99_999, 99_999)/100_000
-    for i in range(len(model_a.hidden4.bias.data)):
-        if random.random() < rate:
-            model_a.hidden4.bias.data[i] = model_b.hidden4.bias.data[i]
-        if random.random() < percent:
-            model_a.hidden4.bias.data[i] = random.randint(-99_999, 99_999)/100_000
+    bias_list_a = [model_a.hidden1.bias.data, model_a.hidden2.bias.data, model_a.hidden3.bias.data,
+                   model_a.hidden4.bias.data]
+    bias_list_b = [model_b.hidden1.bias.data, model_b.hidden2.bias.data, model_b.hidden3.bias.data,
+                   model_b.hidden4.bias.data]
+    for i in range(len(bias_list_a)):
+        for j in range(len(bias_list_a[i])):
+            if random.random() < rate:
+                bias_list_a[i][j] = bias_list_b[i][j]
+            if random.random() < percent:
+                bias_list_a[i][j] = random.randint(-99_999, 99_999) / 100_000
     # Weights mutation
-    for i in range(len(model_a.hidden1.weight.data)):
-        for j in range(len(model_a.hidden1.weight.data[i])):
-            if random.random() < rate:
-                model_a.hidden1.weight.data[i][j] = model_b.hidden1.weight.data[i][j]
-            if random.random() < percent:
-                model_a.hidden1.weight.data[i][j] = random.randint(-99_999, 99_999)/100_000
-    for i in range(len(model_a.hidden2.weight.data)):
-        for j in range(len(model_a.hidden2.weight.data[i])):
-            if random.random() < rate:
-                model_a.hidden2.weight.data[i][j] = model_b.hidden2.weight.data[i][j]
-            if random.random() < percent:
-                model_a.hidden2.weight.data[i][j] = random.randint(-99_999, 99_999)/100_000
-    for i in range(len(model_a.hidden3.weight.data)):
-        for j in range(len(model_a.hidden3.weight.data[i])):
-            if random.random() < rate:
-                model_a.hidden3.weight.data[i][j] = model_b.hidden3.weight.data[i][j]
-            if random.random() < percent:
-                model_a.hidden3.weight.data[i][j] = random.randint(-99_999, 99_999)/100_000
-    for i in range(len(model_a.hidden4.weight.data)):
-        for j in range(len(model_a.hidden4.weight.data[i])):
-            if random.random() < rate:
-                model_a.hidden4.weight.data[i][j] = model_b.hidden4.weight.data[i][j]
-            if random.random() < percent:
-                model_a.hidden4.weight.data[i][j] = random.randint(-99_999, 99_999)/100_000
+    weights_list_a = [model_a.hidden1.weight.data, model_a.hidden2.weight.data, model_a.hidden3.weight.data,
+                      model_a.hidden4.weight.data]
+    weights_list_b = [model_b.hidden1.weight.data, model_b.hidden2.weight.data, model_b.hidden3.weight.data,
+                      model_b.hidden4.weight.data]
+    for i in range(len(weights_list_a)):
+        for j in range(len(weights_list_a[i])):
+            for k in range(len(weights_list_a[i][j])):
+                if random.random() < rate:
+                    weights_list_a[i][j][k] = weights_list_b[i][j][k]
+                if random.random() < percent:
+                    weights_list_a[i][j][k] = random.randint(-99_999, 99_999) / 100_000
 
 
-def training(model_start, model_end, n_gen):
+def training(model_start: list, model_end: list, n_gen: int) -> (list, list, list):
+    """
+    :param model_start: Liste des model de départ
+    :param model_end: Liste des model d'arrivée
+    :param n_gen: Nombre de générations à faire
+    :return: Renvoie trois listes sous la forme (list_model_start, list_model_end, list_result_game)
+    """
     results = []
     for gen in range(n_gen):
         results = []
         next_model_start = []
         next_model_end = []
         for i in range(1, len(model_start), 2):
-            result = simu((model_start[i], model_end[i]), (model_start[i - 1], model_end[i - 1]))
+            result = simulation_ia((model_start[i], model_end[i]), (model_start[i - 1], model_end[i - 1]))
             if result == 0:
                 temp_start = model_start[i]
                 mutation(model_start[i], model_start[i - 1], 0, 0.01)
@@ -238,7 +233,12 @@ def training(model_start, model_end, n_gen):
     return model_start, model_end, results
 
 
-def start_training(model_start_load=None, model_end_load=None):
+def start_training(model_start_load=None, model_end_load=None) -> (Model, Model):
+    """
+    :param model_start_load: Mettre un model de départ en cas d'upgrade de celui-ci
+    :param model_end_load: Mettre un model d'arriver en cas d'upgrade de celui-ci
+    :return: Renvoie deux model sous le format suivant: (best_model_start, best_model_end)
+    """
     expo = 2
     gen_mul = 10_000
     if not (model_start_load is None or model_end_load is None):
@@ -246,8 +246,8 @@ def start_training(model_start_load=None, model_end_load=None):
         model_start = [model_start_load for _ in range(2 ** expo)]
         model_end = [model_end_load for _ in range(2 ** expo)]
     else:
-        model_start = [MLP(51) for _ in range(2 ** expo)]
-        model_end = [MLP(51) for _ in range(2 ** expo)]
+        model_start = [Model(51) for _ in range(2 ** expo)]
+        model_end = [Model(51) for _ in range(2 ** expo)]
     n = 1
     while len(model_start) > 1:
         print(
@@ -275,11 +275,14 @@ def start_training(model_start_load=None, model_end_load=None):
     return model_start[0], model_end[0]
 
 
-def load_model():
-    model_start = MLP(51)
+def load_model() -> (Model, Model):
+    """
+    :return: Renvoie deux models sous le format suivant: (model_loaded_start, model_loaded_end)
+    """
+    model_start = Model(51)
     model_start.load_state_dict(torch.load('model_start'))
     model_start.eval()
-    model_end = MLP(51)
+    model_end = Model(51)
     model_end.load_state_dict(torch.load('model_end'))
     model_end.eval()
     return model_start, model_end
