@@ -239,8 +239,8 @@ def start_training(model_start_load=None, model_end_load=None) -> (Model, Model)
     :param model_end_load: Mettre un model d'arriver en cas d'upgrade de celui-ci
     :return: Renvoie deux model sous le format suivant: (best_model_start, best_model_end)
     """
-    expo = 2
-    gen_mul = 10_000
+    expo = 1
+    gen_mul = 1_000
     if not (model_start_load is None or model_end_load is None):
         print("Upgrade actual model")
         model_start = [model_start_load for _ in range(2 ** expo)]
