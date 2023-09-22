@@ -1,6 +1,6 @@
 import os.path
 
-from src.bots.ia import *
+from bots.ia import *
 from plateau import *
 
 if __name__ == "__main__":
