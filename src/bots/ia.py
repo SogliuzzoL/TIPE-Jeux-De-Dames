@@ -1,5 +1,6 @@
 import datetime
 import random
+import time
 
 import numpy
 import torch
@@ -179,6 +180,7 @@ def training(model_start: list, model_end: list, n_gen: int) -> (list, list, lis
     :param n_gen: Nombre de générations à faire
     :return: Renvoie trois listes sous la forme (list_model_start, list_model_end, list_result_game)
     """
+    t0 = time.time()
     results = []
     for gen in range(n_gen):
         results = []
@@ -227,7 +229,8 @@ def training(model_start: list, model_end: list, n_gen: int) -> (list, list, lis
 
             results.append(result)
         if (gen + 1) % 10 == 0:
-            print(f'{datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S")} Génération {gen + 1}')
+            t1 = time.time()
+            print(f'{datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S")} Génération {gen + 1}. Moyenne de temps:{(t1-t0)/(gen + 1)}')
         model_start = next_model_start
         model_end = next_model_end
     return model_start, model_end, results
