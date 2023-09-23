@@ -1,3 +1,4 @@
+import json
 import os.path
 
 from bots.ia import *
@@ -11,10 +12,10 @@ if __name__ == "__main__":
     test_dames = False
     fast_simu = False
     human_vs_bot = True
-    bot_used = 0  # 0 = Monte-Carlo, 1 = Minimax, 2 = IA
+    bot_used = 2  # 0 = Monte-Carlo, 1 = Minimax, 2 = IA
     ia = True
-    ia_training = False
-    ia_infinite_training = False
+    ia_training = True
+    ia_infinite_training = True
     create_new_model = False
     model_start, model_end = None, None
     game_fps = 60
@@ -29,6 +30,22 @@ if __name__ == "__main__":
     nb_parties = 0
     running = True
     waiting = False
+    """
+    Chargement paramètre JSON
+    """
+    try:
+        config = open('config.json')
+        datas = json.load(config)
+        test_dames = datas['test_dames']
+        fast_simu = datas['fast_simu']
+        human_vs_bot = datas['human_vs_bot']
+        bot_used = datas['bot_used']
+        ia = datas['ia']
+        ia_training = datas['ia_training']
+        ia_infinite_training = datas['ia_infinite_training']
+        create_new_model = datas['create_new_model']
+    except FileNotFoundError:
+        print('Fichier de config inexistant !')
     """
     Création d'un nouveau plateau
     """
@@ -149,10 +166,11 @@ if __name__ == "__main__":
         screen.blit(text, (5, 24 * 2 + 5))
         text = font.render("Coup conseillé :", True, (50, 50, 50))
         screen.blit(text, (5, 24 * 3 + 5))
-        ia_coups = display_coup([run_ia(plateau, model_start, model_end)])
-        if len(ia_coups) != 0:
-            text = font.render(f'IA: {ia_coups[0]}', True, (125, 125, 125))
-            screen.blit(text, (5, 24 * 4 + 5))
+        if ia:
+            ia_coups = display_coup([run_ia(plateau, model_start, model_end)])
+            if len(ia_coups) != 0:
+                text = font.render(f'IA: {ia_coups[0]}', True, (125, 125, 125))
+                screen.blit(text, (5, 24 * 4 + 5))
         text = font.render("Coups possibles :", True, (50, 50, 50))
         screen.blit(text, (5, 24 * 5 + 5))
         for i in range(1, len(real_coup) + 1):
