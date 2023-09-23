@@ -2,6 +2,7 @@ import os.path
 
 from bots.ia import *
 from plateau import *
+from bots.minimax import run_minimax
 
 if __name__ == "__main__":
     """
@@ -10,6 +11,7 @@ if __name__ == "__main__":
     test_dames = False
     fast_simu = False
     human_vs_bot = True
+    bot_used = 0  # 0 = Monte-Carlo, 1 = Minimax, 2 = IA
     ia = True
     ia_training = False
     ia_infinite_training = False
@@ -37,7 +39,7 @@ if __name__ == "__main__":
     Création IA
     """
     if ia:
-        if create_new_model or not(os.path.isfile('model_start') and os.path.isfile('model_end')):
+        if create_new_model or not (os.path.isfile('model_start') and os.path.isfile('model_end')):
             model_start, model_end = start_training()
         else:
             model_start, model_end = load_model()
@@ -84,7 +86,8 @@ if __name__ == "__main__":
                     coups = coups_possibles(plateau.positions(), plateau.round_side)
                     for coup in coups:
                         if coup.startswith(str(case_depart)) and coup.endswith(str(case_arrive)):
-                            if (len(str(case_arrive)) == 1 and (coup[-2] == 'x' or coup[-2] == '-')) or (len(str(case_arrive)) == 2 and (coup[-3] == 'x' or coup[-3] == '-')):
+                            if (len(str(case_arrive)) == 1 and (coup[-2] == 'x' or coup[-2] == '-')) or (
+                                    len(str(case_arrive)) == 2 and (coup[-3] == 'x' or coup[-3] == '-')):
                                 plateau.jouer_coup(coup, plateau.round_side)
                                 if plateau.round_side:
                                     plateau.round_side = 0
@@ -95,6 +98,9 @@ if __name__ == "__main__":
                                 break
                     case_depart = 0
                     case_arrive = 0
+        """
+        Vérification de la victoire d'un camp
+        """
         win = plateau.check_win()
         if win != -1:
             if win == 1:
@@ -105,14 +111,19 @@ if __name__ == "__main__":
             print(
                 f'[{datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S")}] - {str(float(total_win_blanc) / float(nb_parties) * 100)}% de parties gagnées par le blanc et {str(float(total_win_noir) / float(nb_parties) * 100)}% de parties gagnées par le noir (Blanc: {total_win_blanc}, Noir: {total_win_noir}, Total parties: {nb_parties})')
             plateau = Plateau()
+        """
+        Simulation du bot
+        """
         if fast_simu or human_vs_bot and plateau.round_side:
             coups = coups_possibles(plateau.positions(), plateau.round_side)
             if len(coups) == 0:
                 plateau = Plateau()
             else:
                 coup = coups[random.randint(0, len(coups) - 1)]
-                if ia:
+                if ia and bot_used == 2:
                     coup = run_ia(plateau, model_start, model_end)
+                elif bot_used == 1:
+                    coup = run_minimax(plateau)
                 plateau.jouer_coup(coup, plateau.round_side)
                 if plateau.round_side:
                     plateau.round_side = 0
