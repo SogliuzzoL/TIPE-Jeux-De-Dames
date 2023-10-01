@@ -28,13 +28,13 @@ class Model(Module):
         :param n_inputs: Nombre d'entrées que le model aura
         """
         super(Model, self).__init__()
-        self.hidden1 = Linear(n_inputs, 10*n_inputs)
+        self.hidden1 = Linear(n_inputs, 7*n_inputs)
         self.act1 = Tanh()
-        self.hidden2 = Linear(10*n_inputs, 10*n_inputs)
+        self.hidden2 = Linear(7*n_inputs, 7*n_inputs)
         self.act2 = Softsign()
-        self.hidden3 = Linear(10*n_inputs, 10*n_inputs)
+        self.hidden3 = Linear(7*n_inputs, 7*n_inputs)
         self.act3 = Tanh()
-        self.hidden4 = Linear(10*n_inputs, 50)
+        self.hidden4 = Linear(7*n_inputs, 50)
         self.act4 = Softsign()
 
     def forward(self, data):
