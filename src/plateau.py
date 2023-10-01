@@ -154,6 +154,23 @@ class Plateau:
             return True
         return False
 
+    def plateau_information(self) -> dict:
+        information = {'compte_noirs': 0, 'compte_blancs': 0, 'dames_noirs': 0, 'dames_blancs': 0, 'centre_noirs': 0, 'centre_blancs': 0}
+        for pion in self.pions:
+            if pion.color == 0:
+                information['compte_noirs'] += 1
+                if pion.dame:
+                    information['dames_noirs'] += 1
+                if 30 <= pion.emplacement <= 21:
+                    information['centre_noirs'] += 1
+            else:
+                information['compte_blancs'] += 1
+                if pion.dame:
+                    information['dames_blancs'] += 1
+                if 30 <= pion.emplacement <= 21:
+                    information['centre_blancs'] += 1
+        return information
+
 
 def coups_prises_pions(case: int, positions: dict, couleur=0, tree=None, parent=None) -> Tree:
     """

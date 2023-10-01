@@ -18,6 +18,8 @@ print(f"Using {device} device")
 
 torch.set_default_device(device)
 
+input_layer_len = 57
+
 
 class Model(Module):
     def __init__(self, n_inputs):
@@ -69,8 +71,9 @@ def run_ia(plateau, model_start_case: Model, model_end_case: Model) -> str:
     :return: Une chaîne de caractère contenant le coup à jouer
     """
     positions = plateau.positions()
-    row = [0 for _ in range(51)]
-    for i in range(51):
+    informations = plateau.plateau_information()
+    row = [0 for _ in range(input_layer_len)]
+    for i in range(input_layer_len):
         if i == 0:
             if plateau.round_side == 1:
                 row[i] = -1
@@ -87,6 +90,13 @@ def run_ia(plateau, model_start_case: Model, model_end_case: Model) -> str:
                     row[i] = -0.5
                 else:
                     row[i] = -1
+
+    row[51] = informations['compte_noirs']
+    row[52] = informations['compte_blancs']
+    row[53] = informations['dames_noirs']
+    row[54] = informations['dames_blancs']
+    row[55] = informations['centre_noirs']
+    row[56] = informations['centre_blancs']
 
     y_start = predict_ia(row, model_start_case)
     y_end = predict_ia(row, model_end_case)
@@ -249,8 +259,8 @@ def start_training(model_start_load=None, model_end_load=None) -> (Model, Model)
         model_start = [model_start_load for _ in range(2 ** expo)]
         model_end = [model_end_load for _ in range(2 ** expo)]
     else:
-        model_start = [Model(51) for _ in range(2 ** expo)]
-        model_end = [Model(51) for _ in range(2 ** expo)]
+        model_start = [Model(input_layer_len) for _ in range(2 ** expo)]
+        model_end = [Model(input_layer_len) for _ in range(2 ** expo)]
     n = 1
     while len(model_start) > 1:
         print(
@@ -282,10 +292,10 @@ def load_model() -> (Model, Model):
     """
     :return: Renvoie deux models sous le format suivant: (model_loaded_start, model_loaded_end)
     """
-    model_start = Model(51)
+    model_start = Model(input_layer_len)
     model_start.load_state_dict(torch.load('model_start'))
     model_start.eval()
-    model_end = Model(51)
+    model_end = Model(input_layer_len)
     model_end.load_state_dict(torch.load('model_end'))
     model_end.eval()
     return model_start, model_end

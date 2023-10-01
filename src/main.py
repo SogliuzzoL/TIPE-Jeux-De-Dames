@@ -14,8 +14,8 @@ if __name__ == "__main__":
     human_vs_bot = True
     bot_used = 2  # 0 = Monte-Carlo, 1 = Minimax, 2 = IA
     ia = True
-    ia_training = True
-    ia_infinite_training = True
+    ia_training = False
+    ia_infinite_training = False
     create_new_model = False
     model_start, model_end = None, None
     game_fps = 60
