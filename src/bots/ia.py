@@ -168,7 +168,7 @@ def mutation(model_a: Model, model_b: Model, rate: float, percent: float):
             if random.random() < rate:
                 bias_list_a[i][j] = bias_list_b[i][j]
             if random.random() < percent:
-                bias_list_a[i][j] = random.randint(-99_999, 99_999) / 100_000
+                bias_list_a[i][j] = random.randint(-999_999, 999_999) / 1_000_000
     # Weights mutation
     weights_list_a = [model_a.hidden1.weight.data, model_a.hidden2.weight.data, model_a.hidden3.weight.data,
                       model_a.hidden4.weight.data]
@@ -180,7 +180,7 @@ def mutation(model_a: Model, model_b: Model, rate: float, percent: float):
                 if random.random() < rate:
                     weights_list_a[i][j][k] = weights_list_b[i][j][k]
                 if random.random() < percent:
-                    weights_list_a[i][j][k] = random.randint(-99_999, 99_999) / 100_000
+                    weights_list_a[i][j][k] = random.randint(-999_999, 999_999) / 1_000_000
 
 
 def training(model_start: list, model_end: list, n_gen: int) -> (list, list, list):
