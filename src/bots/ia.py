@@ -3,6 +3,7 @@ import random
 import time
 
 import numpy
+import numpy as np
 import torch
 from plateau import Plateau, coups_possibles
 from torch import Tensor
@@ -164,11 +165,13 @@ def mutation(model_a: Model, model_b: Model, rate: float, percent: float):
     bias_list_b = [model_b.hidden1.bias.data, model_b.hidden2.bias.data, model_b.hidden3.bias.data,
                    model_b.hidden4.bias.data]
     for i in range(len(bias_list_a)):
-        for j in range(len(bias_list_a[i])):
-            if random.random() < rate:
-                bias_list_a[i][j] = bias_list_b[i][j]
-            if random.random() < percent:
-                bias_list_a[i][j] = random.randint(-999_999, 999_999) / 1_000_000
+        len_bias = len(bias_list_a[i])
+        rating = [random.randint(0, len_bias - 1) for _ in range(int(len_bias*rate))]
+        percentage = [random.randint(0, len_bias - 1) for _ in range(int(len_bias*percent))]
+        for r in rating:
+            bias_list_a[i][r] = bias_list_b[i][r]
+        for p in percentage:
+            bias_list_a[i][p] = random.randint(-999_999, 999_999) / 1_000_000
     # Weights mutation
     weights_list_a = [model_a.hidden1.weight.data, model_a.hidden2.weight.data, model_a.hidden3.weight.data,
                       model_a.hidden4.weight.data]
@@ -176,11 +179,13 @@ def mutation(model_a: Model, model_b: Model, rate: float, percent: float):
                       model_b.hidden4.weight.data]
     for i in range(len(weights_list_a)):
         for j in range(len(weights_list_a[i])):
-            for k in range(len(weights_list_a[i][j])):
-                if random.random() < rate:
-                    weights_list_a[i][j][k] = weights_list_b[i][j][k]
-                if random.random() < percent:
-                    weights_list_a[i][j][k] = random.randint(-999_999, 999_999) / 1_000_000
+            len_weights = len(weights_list_a[i][j])
+            rating = [random.randint(0, len_weights - 1) for _ in range(int(len_weights*rate))]
+            percentage = [random.randint(0, len_weights - 1) for _ in range(int(len_weights*percent))]
+            for r in rating:
+                weights_list_a[i][j][r] = weights_list_b[i][j][r]
+            for p in percentage:
+                weights_list_a[i][j][p] = random.randint(-999_999, 999_999) / 1_000_000
 
 
 def training(model_start: list, model_end: list, n_gen: int) -> (list, list, list):
