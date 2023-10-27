@@ -1,6 +1,7 @@
 import datetime
 import random
 import time
+from typing import Tuple, Any
 
 import numpy
 import numpy as np
@@ -133,11 +134,11 @@ def run_ia(plateau, model_start_case: Model, model_end_case: Model) -> str:
     return real_coup
 
 
-def simulation_ia(player_white: tuple, player_black: tuple) -> int:
+def simulation_ia(player_white: tuple, player_black: tuple) -> tuple[int, dict]:
     """
     :param player_white: Tuple contenant (model_start, model_end) pour le joueur blanc
     :param player_black: Tuple contenant (model_start, model_end) pour le joueur noir
-    :return: Renvoie 0 si les blancs ont gagné, 1 si les noirs ont gagné et 2 s'il y a égalité
+    :return: Renvoie 0 si les blancs ont gagné, 1 si les noirs ont gagné et 2 s'il y a égalité et les informations du plateau
     """
     plateau = Plateau()
     while plateau.check_win() == -1:
@@ -148,7 +149,7 @@ def simulation_ia(player_white: tuple, player_black: tuple) -> int:
             plateau.jouer_coup(run_ia(plateau, player_black[0], player_black[1]), 1)
             plateau.round_side = 0
     win = plateau.check_win()
-    return win
+    return win, plateau.plateau_information()
 
 
 def mutation(model_a: Model, model_b: Model, rate: float, percent: float):
@@ -188,119 +189,117 @@ def mutation(model_a: Model, model_b: Model, rate: float, percent: float):
                 weights_list_a[i][j][p] = random.randint(-999_999, 999_999) / 1_000_000
 
 
-def training(model_start: list, model_end: list, n_gen: int) -> (list, list, list):
+def training(model_start_blanc: list, model_end_blanc: list, model_start_noir: list, model_end_noir: list, n_gen: int) -> (Model, Model, Model, Model):
     """
-    :param model_start: Liste des model de départ
-    :param model_end: Liste des model d'arrivée
+    :param model_start_blanc: Liste des model de départ blanc
+    :param model_end_blanc: Liste des model d'arrivée blanc
+    :param model_start_noir: Liste des model de départ noir
+    :param model_end_noir: Liste des model d'arrivée noir
     :param n_gen: Nombre de générations à faire
-    :return: Renvoie trois listes sous la forme (list_model_start, list_model_end, list_result_game)
+    :return: Renvoie quatre models sous la forme suivante (best_start_blanc, best_end_blanc, best_start_noir, best_end_noir)
     """
     t0 = time.time()
-    results = []
+    best_start_blanc, best_end_blanc, best_start_noir, best_end_noir = None, None, None, None
     for gen in range(n_gen):
-        results = []
-        next_model_start = []
-        next_model_end = []
-        for i in range(1, len(model_start), 2):
-            result = simulation_ia((model_start[i], model_end[i]), (model_start[i - 1], model_end[i - 1]))
-            if result == 0:
-                temp_start = model_start[i]
-                mutation(model_start[i], model_start[i - 1], 0, 0.01)
-                mutation(temp_start, model_start[i - 1], 0.1, 0.05)
-                next_model_start.append(model_start[i])
-                next_model_start.append(temp_start)
-
-                temp_end = model_end[i]
-                mutation(model_end[i], model_end[i - 1], 0, 0.01)
-                mutation(temp_end, model_end[i - 1], 0.1, 0.05)
-                next_model_end.append(model_end[i])
-                next_model_end.append(temp_end)
-
-            elif result == 1:
-                temp_start = model_start[i - 1]
-                mutation(model_start[i - 1], model_start[i], 0, 0.01)
-                mutation(temp_start, model_start[i], 0.1, 0.05)
-                next_model_start.append(model_start[i - 1])
-                next_model_start.append(temp_start)
-
-                temp_end = model_end[i - 1]
-                mutation(model_end[i - 1], model_end[i], 0, 0.01)
-                mutation(temp_end, model_end[i], 0.1, 0.05)
-                next_model_end.append(model_end[i - 1])
-                next_model_end.append(temp_end)
-
-            else:
-                temp_start = model_start[i]
-                mutation(model_start[i], model_start[i - 1], 0, 0.05)
-                mutation(model_start[i - 1], temp_start, 0, 0.05)
-                next_model_start.append(model_start[i])
-                next_model_start.append(model_start[i - 1])
-
-                temp_end = model_end[i]
-                mutation(model_end[i], model_end[i - 1], 0, 0.05)
-                mutation(model_end[i - 1], temp_end, 0, 0.05)
-                next_model_end.append(model_end[i])
-                next_model_end.append(model_end[i - 1])
-
-            results.append(result)
+        results = {0: [], 1: [], 2: []}
+        # Simulation des parties
+        for i in range(len(model_start_blanc)):
+            result = simulation_ia((model_start_blanc[i], model_end_blanc[i]), (model_start_noir[i], model_end_noir[i]))
+            results[result[0]].append([i, result[1]])
+        # Recherche du meilleur model blanc
+        n_points, id_model = 0, 0
+        if results[0]:
+            for j in range(len(results[0])):
+                if results[0][j][1]['compte_blancs'] > n_points:
+                    n_points = results[0][j][1]['compte_blancs']
+                    id_model = results[0][j][0]
+        elif results[2]:
+            for j in range(len(results[2])):
+                if results[2][j][1]['compte_blancs'] > n_points:
+                    n_points = results[2][j][1]['compte_blancs']
+                    id_model = results[2][j][0]
+        else:
+            for j in range(len(results[1])):
+                if results[1][j][1]['compte_noirs'] < n_points:
+                    n_points = results[1][j][1]['compte_noirs']
+                    id_model = results[1][j][0]
+        best_start_blanc = model_start_noir[id_model]
+        best_end_blanc = model_end_noir[id_model]
+        # Recherche du meilleur model noir
+        n_points, id_model = 0, 0
+        if results[1]:
+            for j in range(len(results[1])):
+                if results[1][j][1]['compte_noirs'] > n_points:
+                    n_points = results[1][j][1]['compte_noirs']
+                    id_model = results[1][j][0]
+        elif results[2]:
+            for j in range(len(results[2])):
+                if results[2][j][1]['compte_noirs'] > n_points:
+                    n_points = results[2][j][1]['compte_noirs']
+                    id_model = results[2][j][0]
+        else:
+            for j in range(len(results[0])):
+                if results[0][j][1]['compte_blancs'] < n_points:
+                    n_points = results[0][j][1]['compte_blancs']
+                    id_model = results[0][j][0]
+        best_start_noir = model_start_noir[id_model]
+        best_end_noir = model_end_noir[id_model]
+        # Mutation des models
+        for k in range(len(model_start_noir)):
+            mutation(model_start_blanc[k], best_start_blanc, 0.1, 0.02)
+            mutation(model_end_blanc[k], best_end_blanc, 0.1, 0.02)
+            mutation(model_start_noir[k], best_start_noir, 0.1, 0.02)
+            mutation(model_end_noir[k], best_end_noir, 0.1, 0.02)
         if (gen + 1) % 10 == 0:
             t1 = time.time()
             print(f'{datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S")} Génération {gen + 1}. Moyenne de temps:{(t1-t0)/(gen + 1)}')
-        model_start = next_model_start
-        model_end = next_model_end
-    return model_start, model_end, results
+    return best_start_blanc, best_end_blanc, best_start_noir, best_end_noir
 
 
-def start_training(model_start_load=None, model_end_load=None) -> (Model, Model):
+def start_training(model_start_load_blanc=None, model_end_load_blanc=None, model_start_load_noir=None, model_end_load_noir=None) -> (Model, Model, Model, Model):
     """
-    :param model_start_load: Mettre un model de départ en cas d'upgrade de celui-ci
-    :param model_end_load: Mettre un model d'arriver en cas d'upgrade de celui-ci
-    :return: Renvoie deux model sous le format suivant: (best_model_start, best_model_end)
+    :param model_start_load_blanc: Mettre un model de départ blanc en cas d'upgrade de celui-ci
+    :param model_end_load_blanc: Mettre un model d'arriver blanc en cas d'upgrade de celui-ci
+    :param model_start_load_noir: Mettre un model de départ noir en cas d'upgrade de celui-ci
+    :param model_end_load_noir: Mettre un model d'arriver noir en cas d'upgrade de celui-ci
+    :return: Renvoie deux model sous le format suivant: (best_model_start_blanc, best_model_end_blanc, best_model_start_noir, best_model_end_noir)
     """
-    expo = 1
     gen_mul = 1_000
-    if not (model_start_load is None or model_end_load is None):
+    if not (model_start_load_blanc is None or model_end_load_blanc is None or model_start_load_noir is None or model_end_load_noir is None):
         print("Upgrade actual model")
-        model_start = [model_start_load for _ in range(2 ** expo)]
-        model_end = [model_end_load for _ in range(2 ** expo)]
+        model_start_blanc = [model_start_load_blanc for _ in range(10)]
+        model_end_blanc = [model_end_load_blanc for _ in range(10)]
+        model_start_noir = [model_start_load_noir for _ in range(10)]
+        model_end_noir = [model_end_load_noir for _ in range(10)]
     else:
-        model_start = [Model(input_layer_len) for _ in range(2 ** expo)]
-        model_end = [Model(input_layer_len) for _ in range(2 ** expo)]
-    n = 1
-    while len(model_start) > 1:
-        print(
-            f'{datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S")} Nouveau training avec {len(model_start)} models')
-        model_start, model_end, results = training(model_start, model_end, n * gen_mul)
-        new_start = []
-        new_end = []
-        for i in range(len(results)):
-            if results[i] == 0:
-                new_start.append(model_start[2 * i])
-                new_end.append(model_end[2 * i])
-            elif results[i] == 1:
-                new_start.append(model_start[2 * i + 1])
-                new_end.append(model_end[2 * i + 1])
-            else:
-                new_start.append(model_start[2 * i])
-                new_end.append(model_end[2 * i])
-        model_start = new_start
-        model_end = new_end
-        model_start.reverse()
-        model_end.reverse()
-        n += 1
-        torch.save(model_start[0].state_dict(), 'model_start')
-        torch.save(model_end[0].state_dict(), 'model_end')
-    return model_start[0], model_end[0]
+        model_start_blanc = [Model(input_layer_len) for _ in range(10)]
+        model_end_blanc = [Model(input_layer_len) for _ in range(10)]
+        model_start_noir = [Model(input_layer_len) for _ in range(10)]
+        model_end_noir = [Model(input_layer_len) for _ in range(10)]
+    print(
+        f'{datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S")} Nouveau training avec {len(model_start_blanc)} models')
+    model_start_blanc, model_end_blanc, model_start_noir, model_end_noir = training(model_start_blanc, model_end_blanc, model_start_noir, model_end_noir, gen_mul)
+    torch.save(model_start_blanc.state_dict(), 'model_start_blanc')
+    torch.save(model_end_blanc.state_dict(), 'model_end_blanc')
+    torch.save(model_start_noir.state_dict(), 'model_start_noir')
+    torch.save(model_end_noir.state_dict(), 'model_end_noir')
+    return model_start_blanc, model_end_blanc, model_start_noir, model_end_noir
 
 
-def load_model() -> (Model, Model):
+def load_model() -> (Model, Model, Model, Model):
     """
-    :return: Renvoie deux models sous le format suivant: (model_loaded_start, model_loaded_end)
+    :return: Renvoie quatre models sous le format suivant: (model_loaded_start_blanc, model_loaded_end_blanc, model_loaded_start_noir, model_loaded_end_noir)
     """
-    model_start = Model(input_layer_len)
-    model_start.load_state_dict(torch.load('model_start'))
-    model_start.eval()
-    model_end = Model(input_layer_len)
-    model_end.load_state_dict(torch.load('model_end'))
-    model_end.eval()
-    return model_start, model_end
+    model_start_blanc = Model(input_layer_len)
+    model_start_blanc.load_state_dict(torch.load('model_start_blanc'))
+    model_start_blanc.eval()
+    model_end_blanc = Model(input_layer_len)
+    model_end_blanc.load_state_dict(torch.load('model_end_blanc'))
+    model_end_blanc.eval()
+    model_start_noir = Model(input_layer_len)
+    model_start_noir.load_state_dict(torch.load('model_start_noir'))
+    model_start_noir.eval()
+    model_end_noir = Model(input_layer_len)
+    model_end_noir.load_state_dict(torch.load('model_end_noir'))
+    model_end_noir.eval()
+    return model_start_blanc, model_end_blanc, model_start_noir, model_end_noir

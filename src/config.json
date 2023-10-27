@@ -7,5 +7,6 @@
   "ia": true,
   "ia_training": false,
   "ia_infinite_training": false,
-  "create_new_model": false
+  "create_new_model": false,
+  "player_side": 0
 }
