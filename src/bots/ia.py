@@ -308,13 +308,13 @@ def training(model_start_blanc: list, model_end_blanc: list, model_start_noir: l
                 f"{datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S")} Score Models Blancs: {score_blancs_plus_id_model}")
             # Sauvegarde du meilleur model
             torch.save(best_start_blanc.state_dict(),
-                       'model_start_blanc_' + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + f"_gen{gen}")
+                       datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + f"_gen{gen + 1}_" + 'model_start_blanc')
             torch.save(best_end_blanc.state_dict(),
-                       'model_end_blanc_' + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + f"_gen{gen}")
+                       datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + f"_gen{gen + 1}_" + 'model_end_blanc')
             torch.save(best_start_noir.state_dict(),
-                       'model_start_noir_' + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + f"_gen{gen}")
+                       datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + f"_gen{gen + 1}_" + 'model_start_noir')
             torch.save(best_end_noir.state_dict(),
-                       'model_end_noir_' + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + f"_gen{gen}")
+                       datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + f"_gen{gen + 1}_" + 'model_end_noir')
 
     return best_start_blanc, best_end_blanc, best_start_noir, best_end_noir
 
@@ -332,10 +332,14 @@ def start_training(model_start_load_blanc=None, model_end_load_blanc=None, model
     if not (
             model_start_load_blanc is None or model_end_load_blanc is None or model_start_load_noir is None or model_end_load_noir is None):
         print("Upgrade actual model")
-        model_start_blanc = [model_start_load_blanc for _ in range(100)]
-        model_end_blanc = [model_end_load_blanc for _ in range(100)]
-        model_start_noir = [model_start_load_noir for _ in range(100)]
-        model_end_noir = [model_end_load_noir for _ in range(100)]
+        model_start_blanc = [model_start_load_blanc for _ in range(20)]
+        model_end_blanc = [model_end_load_blanc for _ in range(20)]
+        model_start_noir = [model_start_load_noir for _ in range(20)]
+        model_end_noir = [model_end_load_noir for _ in range(20)]
+        model_start_blanc += [Model(input_layer_len) for _ in range(80)]
+        model_end_blanc += [Model(input_layer_len) for _ in range(80)]
+        model_start_noir += [Model(input_layer_len) for _ in range(80)]
+        model_end_noir += [Model(input_layer_len) for _ in range(80)]
     else:
         model_start_blanc = [Model(input_layer_len) for _ in range(100)]
         model_end_blanc = [Model(input_layer_len) for _ in range(100)]

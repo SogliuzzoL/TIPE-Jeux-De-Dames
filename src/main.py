@@ -60,7 +60,7 @@ if __name__ == "__main__":
     if ia:
         if create_new_model or not (
                 os.path.isfile('model_start_blanc') and os.path.isfile('model_end_blanc') and os.path.isfile(
-                'model_start_noir') and os.path.isfile('model_end_noir')):
+            'model_start_noir') and os.path.isfile('model_end_noir')):
             model_start_blanc, model_end_blanc, model_start_noir, model_end_noir = start_training()
         else:
             model_start_blanc, model_end_blanc, model_start_noir, model_end_noir = load_model()
