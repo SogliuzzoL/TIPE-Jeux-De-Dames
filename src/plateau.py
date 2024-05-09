@@ -155,9 +155,10 @@ class Plateau:
         return False
 
     def plateau_information(self) -> dict:
-        information = {'compte_noirs': 0, 'compte_blancs': 0, 'dames_noirs': 0, 'dames_blancs': 0, 'centre_noirs': 0, 'centre_blancs': 0}
+        information = {'compte_noirs': 0, 'compte_blancs': 0, 'dames_noirs': 0, 'dames_blancs': 0, 'centre_noirs': 0,
+                       'centre_blancs': 0}
         for pion in self.pions:
-            if pion.color == 0:
+            if pion.color == 1:
                 information['compte_noirs'] += 1
                 if pion.dame:
                     information['dames_noirs'] += 1

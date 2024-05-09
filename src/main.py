@@ -2,8 +2,8 @@ import json
 import os.path
 
 from bots.ia import *
-from plateau import *
 from bots.minimax import run_minimax
+from plateau import *
 
 if __name__ == "__main__":
     """
@@ -15,7 +15,7 @@ if __name__ == "__main__":
     player_side = 0  # 0 = Blanc, 1 = Noir
     bot_used = 2  # 0 = Monte-Carlo, 1 = Minimax, 2 = IA
     ia = True
-    ia_training = False
+    ia_training = True
     ia_infinite_training = False
     create_new_model = False
     model_start_blanc, model_end_blanc, model_start_noir, model_end_noir = None, None, None, None
@@ -58,15 +58,23 @@ if __name__ == "__main__":
     Création IA
     """
     if ia:
-        if create_new_model or not (os.path.isfile('model_start_blanc') and os.path.isfile('model_end_blanc') and os.path.isfile('model_start_noir') and os.path.isfile('model_end_noir')):
+        if create_new_model or not (
+                os.path.isfile('model_start_blanc') and os.path.isfile('model_end_blanc') and os.path.isfile(
+                'model_start_noir') and os.path.isfile('model_end_noir')):
             model_start_blanc, model_end_blanc, model_start_noir, model_end_noir = start_training()
         else:
             model_start_blanc, model_end_blanc, model_start_noir, model_end_noir = load_model()
             if ia_training:
-                model_start_blanc, model_end_blanc, model_start_noir, model_end_noir = start_training(model_start_blanc, model_end_blanc, model_start_noir, model_end_noir)
+                model_start_blanc, model_end_blanc, model_start_noir, model_end_noir = start_training(model_start_blanc,
+                                                                                                      model_end_blanc,
+                                                                                                      model_start_noir,
+                                                                                                      model_end_noir)
 
     while ia_infinite_training:
-        model_start_blanc, model_end_blanc, model_start_noir, model_end_noir = start_training(model_start_blanc, model_end_blanc, model_start_noir, model_end_noir)
+        model_start_blanc, model_end_blanc, model_start_noir, model_end_noir = start_training(model_start_blanc,
+                                                                                              model_end_blanc,
+                                                                                              model_start_noir,
+                                                                                              model_end_noir)
     """
     Création de la fenêtre
     """

@@ -1,14 +1,13 @@
+import copy
 import datetime
 import random
 import time
-from typing import Tuple, Any
 
 import numpy
-import numpy as np
 import torch
 from plateau import Plateau, coups_possibles
 from torch import Tensor
-from torch.nn import Module, Linear, Softsign, Tanh
+from torch.nn import Module, Linear, Softsign
 
 # Get cpu, gpu or mps device for training.
 print(f"Cuda available: {torch.cuda.is_available()}")
@@ -29,13 +28,13 @@ class Model(Module):
         :param n_inputs: Nombre d'entrées que le model aura
         """
         super(Model, self).__init__()
-        self.hidden1 = Linear(n_inputs, 7*n_inputs)
-        self.act1 = Tanh()
-        self.hidden2 = Linear(7*n_inputs, 7*n_inputs)
+        self.hidden1 = Linear(n_inputs, 2 * n_inputs)
+        self.act1 = Softsign()
+        self.hidden2 = Linear(2 * n_inputs, 2 * n_inputs)
         self.act2 = Softsign()
-        self.hidden3 = Linear(7*n_inputs, 7*n_inputs)
-        self.act3 = Tanh()
-        self.hidden4 = Linear(7*n_inputs, 50)
+        self.hidden3 = Linear(2 * n_inputs, 2 * n_inputs)
+        self.act3 = Softsign()
+        self.hidden4 = Linear(2 * n_inputs, 50)
         self.act4 = Softsign()
 
     def forward(self, data):
@@ -134,7 +133,7 @@ def run_ia(plateau, model_start_case: Model, model_end_case: Model) -> str:
     return real_coup
 
 
-def simulation_ia(player_white: tuple, player_black: tuple) -> tuple[int, dict]:
+def simulation_ia_vs_ia(player_white: tuple, player_black: tuple) -> tuple[int, dict]:
     """
     :param player_white: Tuple contenant (model_start, model_end) pour le joueur blanc
     :param player_black: Tuple contenant (model_start, model_end) pour le joueur noir
@@ -148,6 +147,25 @@ def simulation_ia(player_white: tuple, player_black: tuple) -> tuple[int, dict]:
         else:
             plateau.jouer_coup(run_ia(plateau, player_black[0], player_black[1]), 1)
             plateau.round_side = 0
+    win = plateau.check_win()
+    return win, plateau.plateau_information()
+
+
+def simulation_ia_vs_montecarlo(model: tuple, model_color=0) -> tuple[int, dict]:
+    """
+    :param model_color: couleur du model (0=white, 1=black)
+    :param model: Tuple contenant (model_start, model_end)
+    :return: Renvoie 0 si les blancs ont gagné, 1 si les noirs ont gagné et 2 s'il y a égalité et les informations du plateau
+    """
+    plateau = Plateau()
+    while plateau.check_win() == -1:
+        if plateau.round_side == model_color:
+            plateau.jouer_coup(run_ia(plateau, model[0], model[1]), model_color)
+            plateau.round_side = 1 - model_color
+        else:
+            coups = coups_possibles(plateau.positions(), plateau.round_side)
+            plateau.jouer_coup(coups[random.randint(0, len(coups) - 1)], 1 - model_color)
+            plateau.round_side = model_color
     win = plateau.check_win()
     return win, plateau.plateau_information()
 
@@ -167,8 +185,8 @@ def mutation(model_a: Model, model_b: Model, rate: float, percent: float):
                    model_b.hidden4.bias.data]
     for i in range(len(bias_list_a)):
         len_bias = len(bias_list_a[i])
-        rating = [random.randint(0, len_bias - 1) for _ in range(int(len_bias*rate))]
-        percentage = [random.randint(0, len_bias - 1) for _ in range(int(len_bias*percent))]
+        rating = [random.randint(0, len_bias - 1) for _ in range(int(len_bias * rate))]
+        percentage = [random.randint(0, len_bias - 1) for _ in range(int(len_bias * percent))]
         for r in rating:
             bias_list_a[i][r] = bias_list_b[i][r]
         for p in percentage:
@@ -181,82 +199,128 @@ def mutation(model_a: Model, model_b: Model, rate: float, percent: float):
     for i in range(len(weights_list_a)):
         for j in range(len(weights_list_a[i])):
             len_weights = len(weights_list_a[i][j])
-            rating = [random.randint(0, len_weights - 1) for _ in range(int(len_weights*rate))]
-            percentage = [random.randint(0, len_weights - 1) for _ in range(int(len_weights*percent))]
+            rating = [random.randint(0, len_weights - 1) for _ in range(int(len_weights * rate))]
+            percentage = [random.randint(0, len_weights - 1) for _ in range(int(len_weights * percent))]
             for r in rating:
                 weights_list_a[i][j][r] = weights_list_b[i][j][r]
             for p in percentage:
                 weights_list_a[i][j][p] = random.randint(-999_999, 999_999) / 1_000_000
 
 
-def training(model_start_blanc: list, model_end_blanc: list, model_start_noir: list, model_end_noir: list, n_gen: int) -> (Model, Model, Model, Model):
+def training(model_start_blanc: list, model_end_blanc: list, model_start_noir: list, model_end_noir: list, n_gen: int,
+             bot_id=0) -> (Model, Model, Model, Model):
     """
     :param model_start_blanc: Liste des model de départ blanc
     :param model_end_blanc: Liste des model d'arrivée blanc
     :param model_start_noir: Liste des model de départ noir
     :param model_end_noir: Liste des model d'arrivée noir
     :param n_gen: Nombre de générations à faire
+    :param bot_id: Choix de l'algorithme qui va affronter les models (0 = Monte-Carlo)
     :return: Renvoie quatre models sous la forme suivante (best_start_blanc, best_end_blanc, best_start_noir, best_end_noir)
     """
     t0 = time.time()
+    score_blancs_plus_id_model = []
+    score_noirs_plus_id_model = []
+    n = len(model_start_blanc)
     best_start_blanc, best_end_blanc, best_start_noir, best_end_noir = None, None, None, None
     for gen in range(n_gen):
-        results = {0: [], 1: [], 2: []}
         # Simulation des parties
-        for i in range(len(model_start_blanc)):
-            result = simulation_ia((model_start_blanc[i], model_end_blanc[i]), (model_start_noir[i], model_end_noir[i]))
-            results[result[0]].append([i, result[1]])
-        # Recherche du meilleur model blanc
-        n_points, id_model = 0, 0
-        if results[0]:
-            for j in range(len(results[0])):
-                if results[0][j][1]['compte_blancs'] > n_points:
-                    n_points = results[0][j][1]['compte_blancs']
-                    id_model = results[0][j][0]
-        elif results[2]:
-            for j in range(len(results[2])):
-                if results[2][j][1]['compte_blancs'] > n_points:
-                    n_points = results[2][j][1]['compte_blancs']
-                    id_model = results[2][j][0]
-        else:
-            for j in range(len(results[1])):
-                if results[1][j][1]['compte_noirs'] < n_points:
-                    n_points = results[1][j][1]['compte_noirs']
-                    id_model = results[1][j][0]
-        best_start_blanc = model_start_noir[id_model]
-        best_end_blanc = model_end_noir[id_model]
-        # Recherche du meilleur model noir
-        n_points, id_model = 0, 0
-        if results[1]:
-            for j in range(len(results[1])):
-                if results[1][j][1]['compte_noirs'] > n_points:
-                    n_points = results[1][j][1]['compte_noirs']
-                    id_model = results[1][j][0]
-        elif results[2]:
-            for j in range(len(results[2])):
-                if results[2][j][1]['compte_noirs'] > n_points:
-                    n_points = results[2][j][1]['compte_noirs']
-                    id_model = results[2][j][0]
-        else:
-            for j in range(len(results[0])):
-                if results[0][j][1]['compte_blancs'] < n_points:
-                    n_points = results[0][j][1]['compte_blancs']
-                    id_model = results[0][j][0]
-        best_start_noir = model_start_noir[id_model]
-        best_end_noir = model_end_noir[id_model]
-        # Mutation des models
-        for k in range(len(model_start_noir)):
-            mutation(model_start_blanc[k], best_start_blanc, 0.1, 0.02)
-            mutation(model_end_blanc[k], best_end_blanc, 0.1, 0.02)
-            mutation(model_start_noir[k], best_start_noir, 0.1, 0.02)
-            mutation(model_end_noir[k], best_end_noir, 0.1, 0.02)
+        score_blancs = []
+        score_noirs = []
+        for i in range(n):
+            # Simulation blancs
+            result = simulation_ia_vs_montecarlo((model_start_blanc[i], model_end_blanc[i]), 0)
+            score = result[1]['compte_blancs'] - result[1]['compte_noirs']
+            if result[0] == 0:
+                score += 20
+            elif result[0] == 1:
+                score -= 20
+            score_blancs.append(score)
+
+            # Simulation noirs
+            result = simulation_ia_vs_montecarlo((model_start_noir[i], model_end_noir[i]), 1)
+            score = result[1]['compte_noirs'] - result[1]['compte_blancs']
+            if result[0] == 0:
+                score -= 20
+            elif result[0] == 1:
+                score += 20
+            score_noirs.append(score)
+
+        # Trie des meilleurs models
+        score_blancs_plus_id_model = [(score_blancs[i], i) for i in range(len(score_blancs))]
+        score_blancs_plus_id_model.sort(key=lambda x: x[0], reverse=True)
+
+        score_noirs_plus_id_model = [(score_noirs[i], i) for i in range(len(score_noirs))]
+        score_noirs_plus_id_model.sort(key=lambda x: x[0], reverse=True)
+
+        # Création de la nouvelle génération avec 1/4 des meilleurs models
+        new_start_noir = []
+        new_end_noir = []
+        new_start_blanc = []
+        new_end_blanc = []
+        for i in range(int(n / 3)):
+            new_start_blanc.append(model_start_blanc[score_blancs_plus_id_model[i][1]])
+            new_end_blanc.append(model_start_blanc[score_blancs_plus_id_model[i][1]])
+            new_start_noir.append(model_start_noir[score_noirs_plus_id_model[i][1]])
+            new_end_noir.append(model_start_noir[score_noirs_plus_id_model[i][1]])
+
+        # Mutation du meilleur model
+        for i in range(int(n / 3)):
+            copy_meilleur_blanc_start = copy.deepcopy(new_start_blanc[0])
+            mutation(copy_meilleur_blanc_start, new_start_blanc[i], 0.5, 0.05)
+            new_start_blanc.append(copy_meilleur_blanc_start)
+
+            copy_meilleur_blanc_end = copy.deepcopy(new_end_blanc[0])
+            mutation(copy_meilleur_blanc_end, new_end_blanc[i], 0.5, 0.05)
+            new_end_blanc.append(copy_meilleur_blanc_end)
+
+            copy_meilleur_noir_start = copy.deepcopy(new_start_noir[0])
+            mutation(copy_meilleur_noir_start, new_start_noir[i], 0.5, 0.05)
+            new_start_noir.append(copy_meilleur_noir_start)
+
+            copy_meilleur_noir_end = copy.deepcopy(new_end_noir[0])
+            mutation(copy_meilleur_noir_end, new_end_noir[i], 0.5, 0.05)
+            new_end_noir.append(copy_meilleur_noir_end)
+
+        # Ajout de nouveaux models
+        for i in range(n - 2 * int(n / 3)):
+            new_start_blanc.append(Model(input_layer_len))
+            new_end_blanc.append(Model(input_layer_len))
+            new_start_noir.append(Model(input_layer_len))
+            new_end_noir.append(Model(input_layer_len))
+
+        # Modification des listes de models pour la prochaine génération
+        model_start_blanc = new_start_blanc
+        model_end_blanc = new_end_blanc
+        model_start_noir = new_start_noir
+        model_end_noir = new_end_noir
+
+        best_start_blanc, best_end_blanc, best_start_noir, best_end_noir = model_start_blanc[
+            score_blancs_plus_id_model[0][1]], model_end_blanc[score_blancs_plus_id_model[0][1]], model_start_noir[
+            score_noirs_plus_id_model[0][1]], model_end_noir[score_noirs_plus_id_model[0][1]]
+
         if (gen + 1) % 10 == 0:
             t1 = time.time()
-            print(f'{datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S")} Génération {gen + 1}. Moyenne de temps:{(t1-t0)/(gen + 1)}')
+            print(
+                f'{datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S")} Génération {gen + 1}. Moyenne de temps '
+                f'pour une génération:{(t1 - t0) / (gen + 1)}')
+            print(
+                f"{datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S")} Score Models Blancs: {score_blancs_plus_id_model}")
+            # Sauvegarde du meilleur model
+            torch.save(best_start_blanc.state_dict(),
+                       'model_start_blanc_' + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + f"_gen{gen}")
+            torch.save(best_end_blanc.state_dict(),
+                       'model_end_blanc_' + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + f"_gen{gen}")
+            torch.save(best_start_noir.state_dict(),
+                       'model_start_noir_' + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + f"_gen{gen}")
+            torch.save(best_end_noir.state_dict(),
+                       'model_end_noir_' + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + f"_gen{gen}")
+
     return best_start_blanc, best_end_blanc, best_start_noir, best_end_noir
 
 
-def start_training(model_start_load_blanc=None, model_end_load_blanc=None, model_start_load_noir=None, model_end_load_noir=None) -> (Model, Model, Model, Model):
+def start_training(model_start_load_blanc=None, model_end_load_blanc=None, model_start_load_noir=None,
+                   model_end_load_noir=None) -> (Model, Model, Model, Model):
     """
     :param model_start_load_blanc: Mettre un model de départ blanc en cas d'upgrade de celui-ci
     :param model_end_load_blanc: Mettre un model d'arriver blanc en cas d'upgrade de celui-ci
@@ -264,21 +328,24 @@ def start_training(model_start_load_blanc=None, model_end_load_blanc=None, model
     :param model_end_load_noir: Mettre un model d'arriver noir en cas d'upgrade de celui-ci
     :return: Renvoie deux model sous le format suivant: (best_model_start_blanc, best_model_end_blanc, best_model_start_noir, best_model_end_noir)
     """
-    gen_mul = 1_000
-    if not (model_start_load_blanc is None or model_end_load_blanc is None or model_start_load_noir is None or model_end_load_noir is None):
+    gen = 10_000
+    if not (
+            model_start_load_blanc is None or model_end_load_blanc is None or model_start_load_noir is None or model_end_load_noir is None):
         print("Upgrade actual model")
-        model_start_blanc = [model_start_load_blanc for _ in range(10)]
-        model_end_blanc = [model_end_load_blanc for _ in range(10)]
-        model_start_noir = [model_start_load_noir for _ in range(10)]
-        model_end_noir = [model_end_load_noir for _ in range(10)]
+        model_start_blanc = [model_start_load_blanc for _ in range(100)]
+        model_end_blanc = [model_end_load_blanc for _ in range(100)]
+        model_start_noir = [model_start_load_noir for _ in range(100)]
+        model_end_noir = [model_end_load_noir for _ in range(100)]
     else:
-        model_start_blanc = [Model(input_layer_len) for _ in range(10)]
-        model_end_blanc = [Model(input_layer_len) for _ in range(10)]
-        model_start_noir = [Model(input_layer_len) for _ in range(10)]
-        model_end_noir = [Model(input_layer_len) for _ in range(10)]
+        model_start_blanc = [Model(input_layer_len) for _ in range(100)]
+        model_end_blanc = [Model(input_layer_len) for _ in range(100)]
+        model_start_noir = [Model(input_layer_len) for _ in range(100)]
+        model_end_noir = [Model(input_layer_len) for _ in range(100)]
     print(
         f'{datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S")} Nouveau training avec {len(model_start_blanc)} models')
-    model_start_blanc, model_end_blanc, model_start_noir, model_end_noir = training(model_start_blanc, model_end_blanc, model_start_noir, model_end_noir, gen_mul)
+    model_start_blanc, model_end_blanc, model_start_noir, model_end_noir = training(model_start_blanc, model_end_blanc,
+                                                                                    model_start_noir, model_end_noir,
+                                                                                    gen)
     torch.save(model_start_blanc.state_dict(), 'model_start_blanc')
     torch.save(model_end_blanc.state_dict(), 'model_end_blanc')
     torch.save(model_start_noir.state_dict(), 'model_start_noir')

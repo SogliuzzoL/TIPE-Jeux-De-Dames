@@ -1,5 +1,5 @@
-import matplotlib.pyplot as plt
 import matplotlib.image as iplt
+import matplotlib.pyplot as plt
 import numpy as np
 
 image_datas = iplt.imread('jeudedames.jpg')
