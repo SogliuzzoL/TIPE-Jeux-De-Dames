@@ -4,6 +4,7 @@ import random
 import time
 
 import numpy
+import numpy as np
 import torch
 from plateau import Plateau, coups_possibles
 from torch import Tensor
@@ -299,14 +300,24 @@ def training(model_start_blanc: list, model_end_blanc: list, model_start_noir: l
             score_blancs_plus_id_model[0][1]], model_end_blanc[score_blancs_plus_id_model[0][1]], model_start_noir[
             score_noirs_plus_id_model[0][1]], model_end_noir[score_noirs_plus_id_model[0][1]]
 
+        with open("score.csv", "a") as file:
+            moyenne_blanc = np.mean(score_blancs)
+            moyenne_noir = np.mean(score_noirs)
+            median_blanc = np.median(score_blancs)
+            median_noir = np.median(score_noirs)
+            std_blanc = np.std(score_blancs)
+            std_noir = np.std(score_noirs)
+            file.write(f"{gen};{moyenne_blanc};{moyenne_noir};{median_blanc};{median_noir};{std_blanc};{std_noir}\n")
+
         if (gen + 1) % 10 == 0:
             t1 = time.time()
             print(
                 f'{datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S")} Génération {gen + 1}. Moyenne de temps '
                 f'pour une génération:{(t1 - t0) / (gen + 1)}')
             print(
-                f"{datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S")} Score Models Blancs: {score_blancs_plus_id_model}")
+                f"{datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S")} Score Models Blancs: {np.mean(score_blancs)}, Noirs: {np.mean(score_noirs)}")
             # Sauvegarde du meilleur model
+        if (gen + 1) % 1000 == 0:
             torch.save(best_start_blanc.state_dict(),
                        datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + f"_gen{gen + 1}_" + 'model_start_blanc')
             torch.save(best_end_blanc.state_dict(),
@@ -328,7 +339,7 @@ def start_training(model_start_load_blanc=None, model_end_load_blanc=None, model
     :param model_end_load_noir: Mettre un model d'arriver noir en cas d'upgrade de celui-ci
     :return: Renvoie deux model sous le format suivant: (best_model_start_blanc, best_model_end_blanc, best_model_start_noir, best_model_end_noir)
     """
-    gen = 10_000
+    gen = 10_000_000
     if not (
             model_start_load_blanc is None or model_end_load_blanc is None or model_start_load_noir is None or model_end_load_noir is None):
         print("Upgrade actual model")

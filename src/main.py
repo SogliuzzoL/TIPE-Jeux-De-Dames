@@ -185,7 +185,11 @@ if __name__ == "__main__":
         text = font.render("Coup conseillé :", True, (50, 50, 50))
         screen.blit(text, (5, 24 * 3 + 5))
         if ia:
-            ia_coups = display_coup([run_ia(plateau, model_start_blanc, model_end_blanc)])
+            ia_coups = []
+            if player_side == 0:
+                ia_coups = display_coup([run_ia(plateau, model_start_blanc, model_end_blanc)])
+            else:
+                ia_coups = display_coup([run_ia(plateau, model_start_noir, model_end_noir)])
             if len(ia_coups) != 0:
                 text = font.render(f'IA: {ia_coups[0]}', True, (125, 125, 125))
                 screen.blit(text, (5, 24 * 4 + 5))
