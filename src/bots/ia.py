@@ -331,7 +331,7 @@ def training(model_start_blanc: list, model_end_blanc: list, model_start_noir: l
             print(
                 f"{datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S")} Score Models Blancs: {np.mean(score_blancs)}, Noirs: {np.mean(score_noirs)}")
             # Sauvegarde du meilleur model
-        if (gen + 1) % 1000 == 0:
+        if (gen + 1) % 100 == 0:
             torch.save(best_start_blanc.state_dict(),
                        datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + f"_gen{gen + 1}_" + 'model_start_blanc')
             torch.save(best_end_blanc.state_dict(),
