@@ -268,27 +268,41 @@ def training(model_start_blanc: list, model_end_blanc: list, model_start_noir: l
         # Mutation du meilleur model
         for i in range(int(n / 3)):
             copy_meilleur_blanc_start = copy.deepcopy(new_start_blanc[0])
-            mutation(copy_meilleur_blanc_start, new_start_blanc[i], 0.5, 0.05)
+            mutation(copy_meilleur_blanc_start, new_start_blanc[i], 0.2, 0.01)
             new_start_blanc.append(copy_meilleur_blanc_start)
 
             copy_meilleur_blanc_end = copy.deepcopy(new_end_blanc[0])
-            mutation(copy_meilleur_blanc_end, new_end_blanc[i], 0.5, 0.05)
+            mutation(copy_meilleur_blanc_end, new_end_blanc[i], 0.2, 0.01)
             new_end_blanc.append(copy_meilleur_blanc_end)
 
             copy_meilleur_noir_start = copy.deepcopy(new_start_noir[0])
-            mutation(copy_meilleur_noir_start, new_start_noir[i], 0.5, 0.05)
+            mutation(copy_meilleur_noir_start, new_start_noir[i], 0.2, 0.01)
             new_start_noir.append(copy_meilleur_noir_start)
 
             copy_meilleur_noir_end = copy.deepcopy(new_end_noir[0])
-            mutation(copy_meilleur_noir_end, new_end_noir[i], 0.5, 0.05)
+            mutation(copy_meilleur_noir_end, new_end_noir[i], 0.2, 0.01)
             new_end_noir.append(copy_meilleur_noir_end)
 
-        # Ajout de nouveaux models
+        # Mutation aléatoire entre des models présents dans la nouvelle liste
         for i in range(n - 2 * int(n / 3)):
-            new_start_blanc.append(Model(input_layer_len))
-            new_end_blanc.append(Model(input_layer_len))
-            new_start_noir.append(Model(input_layer_len))
-            new_end_noir.append(Model(input_layer_len))
+            # Choix aléatoire de deux modèles
+            i, j = random.randint(0, len(new_start_blanc) - 1), random.randint(0, len(new_start_blanc) - 1)
+            copy_start_blanc = copy.deepcopy(new_start_blanc[i])
+            copy_end_blanc = copy.deepcopy(new_end_blanc[i])
+            copy_start_noir = copy.deepcopy(new_start_noir[i])
+            copy_end_noir = copy.deepcopy(new_end_noir[i])
+
+            # Mutation du modèle i
+            mutation(copy_start_blanc, new_start_blanc[j], 0.2, 0.01)
+            mutation(copy_end_blanc, new_end_blanc[j], 0.2, 0.01)
+            mutation(copy_start_noir, new_start_noir[j], 0.2, 0.01)
+            mutation(copy_end_noir, new_end_noir[j], 0.2, 0.01)
+
+            # Ajout aux listes
+            new_start_blanc.append(copy_start_blanc)
+            new_end_blanc.append(copy_end_blanc)
+            new_start_noir.append(copy_start_noir)
+            new_end_noir.append(copy_end_noir)
 
         # Modification des listes de models pour la prochaine génération
         model_start_blanc = new_start_blanc
