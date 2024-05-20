@@ -20,7 +20,7 @@ print(f"Using {device} device")
 
 torch.set_default_device(device)
 
-input_layer_len = 57
+input_layer_len = 54
 
 
 class Model(Module):
@@ -76,29 +76,21 @@ def run_ia(plateau, model_start_case: Model, model_end_case: Model) -> str:
     informations = plateau.plateau_information()
     row = [0 for _ in range(input_layer_len)]
     for i in range(input_layer_len):
-        if i == 0:
-            if plateau.round_side == 1:
-                row[i] = -1
+        if positions[i][0] == 0:
+            if not positions[i][1]:
+                row[i] = 0.5
             else:
                 row[i] = 1
-        elif i in positions:
-            if positions[i][0] == 0:
-                if not positions[i][1]:
-                    row[i] = 0.5
-                else:
-                    row[i] = 1
+        else:
+            if not positions[i][1]:
+                row[i] = -0.5
             else:
-                if not positions[i][1]:
-                    row[i] = -0.5
-                else:
-                    row[i] = -1
+                row[i] = -1
 
-    row[51] = informations['compte_noirs']
-    row[52] = informations['compte_blancs']
-    row[53] = informations['dames_noirs']
-    row[54] = informations['dames_blancs']
-    row[55] = informations['centre_noirs']
-    row[56] = informations['centre_blancs']
+    row[50] = informations['compte_noirs']
+    row[51] = informations['compte_blancs']
+    row[52] = informations['dames_noirs']
+    row[53] = informations['dames_blancs']
 
     y_start = predict_ia(row, model_start_case)
     y_end = predict_ia(row, model_end_case)
@@ -331,7 +323,7 @@ def training(model_start_blanc: list, model_end_blanc: list, model_start_noir: l
             print(
                 f"{datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S")} Score Models Blancs: {np.mean(score_blancs)}, Noirs: {np.mean(score_noirs)}")
             # Sauvegarde du meilleur model
-        if (gen + 1) % 100 == 0:
+        if (gen + 1) % 250 == 0:
             torch.save(best_start_blanc.state_dict(),
                        datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + f"_gen{gen + 1}_" + 'model_start_blanc')
             torch.save(best_end_blanc.state_dict(),

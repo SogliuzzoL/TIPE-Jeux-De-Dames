@@ -11,7 +11,7 @@ mediane_noirs = []
 ecart_type_blancs = []
 ecart_type_noirs = []
 
-n_moyenne_glissante = 5
+n_moyenne_glissante = 50
 
 with open(file_name, 'r') as file:
     for line in file:
