@@ -220,9 +220,13 @@ def training(model_start_blanc: list, model_end_blanc: list, model_start_noir: l
         # Simulation des parties
         score_blancs = []
         score_noirs = []
+        result = []
         for i in range(n):
             # Simulation blancs
-            result = simulation_ia_vs_montecarlo((model_start_blanc[i], model_end_blanc[i]), 0)
+            if gen < 1000:
+                result = simulation_ia_vs_montecarlo((model_start_blanc[i], model_end_blanc[i]), 0)
+            else:
+                result = simulation_ia_vs_ia((model_start_blanc[i], model_end_blanc[i]), (best_start_noir, best_end_noir))
             score = result[1]['compte_blancs'] - result[1]['compte_noirs']
             if result[0] == 0:
                 score += 20
@@ -231,7 +235,10 @@ def training(model_start_blanc: list, model_end_blanc: list, model_start_noir: l
             score_blancs.append(score)
 
             # Simulation noirs
-            result = simulation_ia_vs_montecarlo((model_start_noir[i], model_end_noir[i]), 1)
+            if gen < 1000:
+                result = simulation_ia_vs_montecarlo((model_start_noir[i], model_end_noir[i]), 1)
+            else:
+                result = simulation_ia_vs_ia((best_start_blanc, best_end_blanc), (model_start_noir[i], model_end_noir[i]))
             score = result[1]['compte_noirs'] - result[1]['compte_blancs']
             if result[0] == 0:
                 score -= 20
