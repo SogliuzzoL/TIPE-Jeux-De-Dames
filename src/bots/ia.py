@@ -76,16 +76,17 @@ def run_ia(plateau, model_start_case: Model, model_end_case: Model) -> str:
     informations = plateau.plateau_information()
     row = [0 for _ in range(input_layer_len)]
     for i in range(input_layer_len):
-        if positions[i][0] == 0:
-            if not positions[i][1]:
-                row[i] = 0.5
+        if i in positions:
+            if positions[i][0] == 0:
+                if not positions[i][1]:
+                    row[i] = 0.5
+                else:
+                    row[i] = 1
             else:
-                row[i] = 1
-        else:
-            if not positions[i][1]:
-                row[i] = -0.5
-            else:
-                row[i] = -1
+                if not positions[i][1]:
+                    row[i] = -0.5
+                else:
+                    row[i] = -1
 
     row[50] = informations['compte_noirs']
     row[51] = informations['compte_blancs']
@@ -352,7 +353,7 @@ def start_training(model_start_load_blanc=None, model_end_load_blanc=None, model
     :param model_end_load_noir: Mettre un model d'arriver noir en cas d'upgrade de celui-ci
     :return: Renvoie deux model sous le format suivant: (best_model_start_blanc, best_model_end_blanc, best_model_start_noir, best_model_end_noir)
     """
-    gen = 10_000_000
+    gen = 100_000
     if not (
             model_start_load_blanc is None or model_end_load_blanc is None or model_start_load_noir is None or model_end_load_noir is None):
         print("Upgrade actual model")
