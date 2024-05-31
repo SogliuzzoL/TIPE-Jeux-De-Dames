@@ -1,6 +1,6 @@
 from matplotlib import pyplot as plt
 
-file_name = "score.csv"
+file_name = "C:\\Users\\lolo4\\PycharmProjects\\ia-jeu-de-dames\\score.csv"
 sep = ";"
 
 gen = []
@@ -11,7 +11,7 @@ mediane_noirs = []
 ecart_type_blancs = []
 ecart_type_noirs = []
 
-n_moyenne_glissante = 50
+n_moyenne_glissante = 1
 
 with open(file_name, 'r') as file:
     for line in file:

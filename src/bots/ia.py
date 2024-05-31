@@ -76,22 +76,22 @@ def run_ia(plateau, model_start_case: Model, model_end_case: Model) -> str:
     informations = plateau.plateau_information()
     row = [0 for _ in range(input_layer_len)]
     for i in range(input_layer_len):
-        if i in positions:
-            if positions[i][0] == 0:
-                if not positions[i][1]:
+        if i + 1 in positions:
+            if positions[i + 1][0] == 0:
+                if not positions[i + 1][1]:
                     row[i] = 0.5
                 else:
                     row[i] = 1
             else:
-                if not positions[i][1]:
+                if not positions[i + 1][1]:
                     row[i] = -0.5
                 else:
                     row[i] = -1
 
-    row[50] = informations['compte_noirs']
-    row[51] = informations['compte_blancs']
-    row[52] = informations['dames_noirs']
-    row[53] = informations['dames_blancs']
+    row[50] = informations['compte_noirs'] / 20
+    row[51] = informations['compte_blancs'] / 20
+    row[52] = informations['dames_noirs'] / 20
+    row[53] = informations['dames_blancs'] / 20
 
     y_start = predict_ia(row, model_start_case)
     y_end = predict_ia(row, model_end_case)

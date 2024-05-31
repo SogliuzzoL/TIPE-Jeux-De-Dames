@@ -17,7 +17,7 @@ if __name__ == "__main__":
     ia = True
     ia_training = True
     ia_infinite_training = False
-    create_new_model = False
+    create_new_model = True
     model_start_blanc, model_end_blanc, model_start_noir, model_end_noir = None, None, None, None
     game_fps = 60
     case_depart = 0
