@@ -10,14 +10,15 @@ if __name__ == "__main__":
     Paramètre de la fenêtre
     """
     test_dames = False
+    test_model = True
     fast_simu = False
     human_vs_bot = True
     player_side = 0  # 0 = Blanc, 1 = Noir
     bot_used = 2  # 0 = Monte-Carlo, 1 = Minimax, 2 = IA
     ia = True
-    ia_training = True
+    ia_training = False
     ia_infinite_training = False
-    create_new_model = True
+    create_new_model = False
     model_start_blanc, model_end_blanc, model_start_noir, model_end_noir = None, None, None, None
     game_fps = 60
     case_depart = 0
@@ -48,6 +49,12 @@ if __name__ == "__main__":
         player_side = datas['player_side']
     except FileNotFoundError:
         print('Fichier de config inexistant !')
+
+    """
+    Test model
+    """
+    if test_model:
+        start_test_model(200, 200, 200)
     """
     Création d'un nouveau plateau
     """

@@ -1,6 +1,6 @@
 from matplotlib import pyplot as plt
 
-file_name = "C:\\Users\\lolo4\\PycharmProjects\\ia-jeu-de-dames\\score.csv"
+file_name = "C:\\Users\\lolo4\\PycharmProjects\\ia-jeu-de-dames\\score_1x1.csv"
 sep = ";"
 
 gen = []

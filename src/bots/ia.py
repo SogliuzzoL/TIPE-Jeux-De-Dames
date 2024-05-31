@@ -24,33 +24,30 @@ input_layer_len = 54
 
 
 class Model(Module):
-    def __init__(self, n_inputs):
+    def __init__(self, n_inputs, n_hidden_largeur, n_hidden_longueur, n_output):
         """
         :param n_inputs: Nombre d'entrées que le model aura
         """
         super(Model, self).__init__()
-        self.hidden1 = Linear(n_inputs, 2 * n_inputs)
-        self.act1 = Softsign()
-        self.hidden2 = Linear(2 * n_inputs, 2 * n_inputs)
-        self.act2 = Softsign()
-        self.hidden3 = Linear(2 * n_inputs, 2 * n_inputs)
-        self.act3 = Softsign()
-        self.hidden4 = Linear(2 * n_inputs, 50)
-        self.act4 = Softsign()
+        self.n_inputs = n_inputs
+        self.n_hidden_largeur = n_hidden_largeur
+        self.n_hidden_longueur = n_hidden_longueur
+        self.n_outputs = n_output
+
+        self.layers = [Linear(n_inputs, n_hidden_largeur)]
+        self.act = Softsign()
+        for i in range(n_hidden_longueur):
+            self.layers.append(Linear(n_hidden_largeur, n_hidden_largeur))
+        self.layers.append(Linear(n_hidden_largeur, n_output))
 
     def forward(self, data):
         """
         :param data: Données d'entrées servant à calculer les données de sorties
         :return: Renvoie les données de sorties
         """
-        data = self.hidden1(data)
-        data = self.act1(data)
-        data = self.hidden2(data)
-        data = self.act2(data)
-        data = self.hidden3(data)
-        data = self.act3(data)
-        data = self.hidden4(data)
-        data = self.act4(data)
+        for layer in self.layers:
+            data = layer(data)
+            data = self.act(data)
         return data
 
 
@@ -173,10 +170,8 @@ def mutation(model_a: Model, model_b: Model, rate: float, percent: float):
     :return: Ne retourne rien
     """
     # Bias Mutation
-    bias_list_a = [model_a.hidden1.bias.data, model_a.hidden2.bias.data, model_a.hidden3.bias.data,
-                   model_a.hidden4.bias.data]
-    bias_list_b = [model_b.hidden1.bias.data, model_b.hidden2.bias.data, model_b.hidden3.bias.data,
-                   model_b.hidden4.bias.data]
+    bias_list_a = [layer.bias.data for layer in model_a.layers]
+    bias_list_b = [layer.bias.data for layer in model_b.layers]
     for i in range(len(bias_list_a)):
         len_bias = len(bias_list_a[i])
         rating = [random.randint(0, len_bias - 1) for _ in range(int(len_bias * rate))]
@@ -186,10 +181,8 @@ def mutation(model_a: Model, model_b: Model, rate: float, percent: float):
         for p in percentage:
             bias_list_a[i][p] = random.randint(-999_999, 999_999) / 1_000_000
     # Weights mutation
-    weights_list_a = [model_a.hidden1.weight.data, model_a.hidden2.weight.data, model_a.hidden3.weight.data,
-                      model_a.hidden4.weight.data]
-    weights_list_b = [model_b.hidden1.weight.data, model_b.hidden2.weight.data, model_b.hidden3.weight.data,
-                      model_b.hidden4.weight.data]
+    weights_list_a = [layer.weight.data for layer in model_a.layers]
+    weights_list_b = [layer.weight.data for layer in model_b.layers]
     for i in range(len(weights_list_a)):
         for j in range(len(weights_list_a[i])):
             len_weights = len(weights_list_a[i][j])
@@ -227,7 +220,8 @@ def training(model_start_blanc: list, model_end_blanc: list, model_start_noir: l
             if gen < 1000:
                 result = simulation_ia_vs_montecarlo((model_start_blanc[i], model_end_blanc[i]), 0)
             else:
-                result = simulation_ia_vs_ia((model_start_blanc[i], model_end_blanc[i]), (best_start_noir, best_end_noir))
+                result = simulation_ia_vs_ia((model_start_blanc[i], model_end_blanc[i]),
+                                             (best_start_noir, best_end_noir))
             score = result[1]['compte_blancs'] - result[1]['compte_noirs']
             if result[0] == 0:
                 score += 20
@@ -239,7 +233,8 @@ def training(model_start_blanc: list, model_end_blanc: list, model_start_noir: l
             if gen < 1000:
                 result = simulation_ia_vs_montecarlo((model_start_noir[i], model_end_noir[i]), 1)
             else:
-                result = simulation_ia_vs_ia((best_start_blanc, best_end_blanc), (model_start_noir[i], model_end_noir[i]))
+                result = simulation_ia_vs_ia((best_start_blanc, best_end_blanc),
+                                             (model_start_noir[i], model_end_noir[i]))
             score = result[1]['compte_noirs'] - result[1]['compte_blancs']
             if result[0] == 0:
                 score -= 20
@@ -314,7 +309,7 @@ def training(model_start_blanc: list, model_end_blanc: list, model_start_noir: l
             score_blancs_plus_id_model[0][1]], model_end_blanc[score_blancs_plus_id_model[0][1]], model_start_noir[
             score_noirs_plus_id_model[0][1]], model_end_noir[score_noirs_plus_id_model[0][1]]
 
-        with open("score.csv", "a") as file:
+        with open(f"score_{model_start_blanc[0].n_hidden_largeur}x{model_start_blanc[0].n_hidden_longueur}.csv", "a") as file:
             moyenne_blanc = np.mean(score_blancs)
             moyenne_noir = np.mean(score_noirs)
             median_blanc = np.median(score_blancs)
@@ -361,15 +356,15 @@ def start_training(model_start_load_blanc=None, model_end_load_blanc=None, model
         model_end_blanc = [model_end_load_blanc for _ in range(20)]
         model_start_noir = [model_start_load_noir for _ in range(20)]
         model_end_noir = [model_end_load_noir for _ in range(20)]
-        model_start_blanc += [Model(input_layer_len) for _ in range(80)]
-        model_end_blanc += [Model(input_layer_len) for _ in range(80)]
-        model_start_noir += [Model(input_layer_len) for _ in range(80)]
-        model_end_noir += [Model(input_layer_len) for _ in range(80)]
+        model_start_blanc += [Model(input_layer_len, 4, 54 * 2, 50) for _ in range(80)]
+        model_end_blanc += [Model(input_layer_len, 4, 54 * 2, 50) for _ in range(80)]
+        model_start_noir += [Model(input_layer_len, 4, 54 * 2, 50) for _ in range(80)]
+        model_end_noir += [Model(input_layer_len, 4, 54 * 2, 50) for _ in range(80)]
     else:
-        model_start_blanc = [Model(input_layer_len) for _ in range(100)]
-        model_end_blanc = [Model(input_layer_len) for _ in range(100)]
-        model_start_noir = [Model(input_layer_len) for _ in range(100)]
-        model_end_noir = [Model(input_layer_len) for _ in range(100)]
+        model_start_blanc = [Model(input_layer_len, 4, 54 * 2, 50) for _ in range(100)]
+        model_end_blanc = [Model(input_layer_len, 4, 54 * 2, 50) for _ in range(100)]
+        model_start_noir = [Model(input_layer_len, 4, 54 * 2, 50) for _ in range(100)]
+        model_end_noir = [Model(input_layer_len, 4, 54 * 2, 50) for _ in range(100)]
     print(
         f'{datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S")} Nouveau training avec {len(model_start_blanc)} models')
     model_start_blanc, model_end_blanc, model_start_noir, model_end_noir = training(model_start_blanc, model_end_blanc,
@@ -380,6 +375,20 @@ def start_training(model_start_load_blanc=None, model_end_load_blanc=None, model
     torch.save(model_start_noir.state_dict(), 'model_start_noir')
     torch.save(model_end_noir.state_dict(), 'model_end_noir')
     return model_start_blanc, model_end_blanc, model_start_noir, model_end_noir
+
+
+def start_test_model(n_largeur_max, n_longueur_max, n_gen):
+    for i in range(1, n_largeur_max):
+        for j in range(1, n_longueur_max):
+            t0 = time.time()
+            model_start_blanc = [Model(input_layer_len, i, j, 50) for _ in range(100)]
+            model_end_blanc = [Model(input_layer_len, i, j, 50) for _ in range(100)]
+            model_start_noir = [Model(input_layer_len, i, j, 50) for _ in range(100)]
+            model_end_noir = [Model(input_layer_len, i, j, 50) for _ in range(100)]
+            training(model_start_blanc, model_end_blanc, model_start_noir, model_end_noir, n_gen)
+            t1 = time.time()
+            with open("temps.csv", "a") as file:
+                file.write(f"{i};{j};{t1 - t0}")
 
 
 def load_model() -> (Model, Model, Model, Model):
