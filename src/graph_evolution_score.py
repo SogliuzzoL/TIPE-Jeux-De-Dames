@@ -10,6 +10,8 @@ mediane_blancs = []
 mediane_noirs = []
 ecart_type_blancs = []
 ecart_type_noirs = []
+max_blanc = []
+max_noir = []
 
 n_moyenne_glissante = 1
 
@@ -22,7 +24,9 @@ with open(file_name, 'r') as file:
         mediane_blancs.append(float(line_sep[3]))
         mediane_noirs.append(float(line_sep[4]))
         ecart_type_blancs.append(float(line_sep[5]))
-        ecart_type_noirs.append(float(line_sep[6].replace("\n", "")))
+        ecart_type_noirs.append(float(line_sep[6]))
+        max_blanc.append(float(line_sep[7]))
+        max_noir.append(float(line_sep[8].replace("\n", "")))
 
 
 def lissage_courbe(l):
@@ -36,7 +40,7 @@ def lissage_courbe(l):
     return moyenne_glissante
 
 
-fig, ax = plt.subplots(3, 1)
+fig, ax = plt.subplots(4, 1)
 
 # Moyenne Glissante
 ax[0].plot(gen[:len(gen) - n_moyenne_glissante], lissage_courbe(moyenne_blancs), label="blancs")
@@ -50,5 +54,9 @@ ax[1].set_title('Médiane du score en fonction de la génération')
 ax[2].plot(gen[:len(gen) - n_moyenne_glissante], lissage_courbe(ecart_type_blancs), label="blancs")
 ax[2].plot(gen[:len(gen) - n_moyenne_glissante], lissage_courbe(ecart_type_noirs), label="noirs")
 ax[2].set_title('Ecart-type du score en fonction de la génération')
+
+ax[3].plot(gen[:len(gen) - n_moyenne_glissante], lissage_courbe(max_blanc), label="blancs")
+ax[3].plot(gen[:len(gen) - n_moyenne_glissante], lissage_courbe(max_noir), label="noirs")
+ax[3].set_title('Score maximum en fonction de la génération')
 
 plt.show()

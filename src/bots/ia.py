@@ -318,7 +318,9 @@ def training(model_start_blanc: list, model_end_blanc: list, model_start_noir: l
             median_noir = np.median(score_noirs)
             std_blanc = np.std(score_blancs)
             std_noir = np.std(score_noirs)
-            file.write(f"{gen};{moyenne_blanc};{moyenne_noir};{median_blanc};{median_noir};{std_blanc};{std_noir}\n")
+            max_blanc = np.max(score_blancs)
+            max_noir = np.max(score_noirs)
+            file.write(f"{gen};{moyenne_blanc};{moyenne_noir};{median_blanc};{median_noir};{std_blanc};{std_noir};{max_blanc};{max_noir}\n")
 
         if (gen + 1) % 10 == 0:
             t1 = time.time()
@@ -393,7 +395,7 @@ def thread_test_model(i, j, n_gen):
 
 
 def start_test_model(n_largeur_max, n_longueur_max, n_gen):
-    pool = concurrent.futures.ThreadPoolExecutor(max_workers=1000)
+    pool = concurrent.futures.ThreadPoolExecutor(max_workers=5)
     for i in range(1, n_largeur_max):
         for j in range(1, n_longueur_max):
             pool.submit(thread_test_model, i, j, n_gen)
