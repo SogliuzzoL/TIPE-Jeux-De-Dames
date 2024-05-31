@@ -1,3 +1,4 @@
+import concurrent.futures
 import copy
 import datetime
 import random
@@ -309,7 +310,8 @@ def training(model_start_blanc: list, model_end_blanc: list, model_start_noir: l
             score_blancs_plus_id_model[0][1]], model_end_blanc[score_blancs_plus_id_model[0][1]], model_start_noir[
             score_noirs_plus_id_model[0][1]], model_end_noir[score_noirs_plus_id_model[0][1]]
 
-        with open(f"score_{model_start_blanc[0].n_hidden_largeur}x{model_start_blanc[0].n_hidden_longueur}.csv", "a") as file:
+        with open(f"score_{model_start_blanc[0].n_hidden_largeur}x{model_start_blanc[0].n_hidden_longueur}.csv",
+                  "a") as file:
             moyenne_blanc = np.mean(score_blancs)
             moyenne_noir = np.mean(score_noirs)
             median_blanc = np.median(score_blancs)
@@ -377,18 +379,24 @@ def start_training(model_start_load_blanc=None, model_end_load_blanc=None, model
     return model_start_blanc, model_end_blanc, model_start_noir, model_end_noir
 
 
+def thread_test_model(i, j, n_gen):
+    t0 = time.time()
+    model_start_blanc = [Model(input_layer_len, i, j, 50) for _ in range(100)]
+    model_end_blanc = [Model(input_layer_len, i, j, 50) for _ in range(100)]
+    model_start_noir = [Model(input_layer_len, i, j, 50) for _ in range(100)]
+    model_end_noir = [Model(input_layer_len, i, j, 50) for _ in range(100)]
+    print(f'Start training for largeur {i} and longueur{j}')
+    training(model_start_blanc, model_end_blanc, model_start_noir, model_end_noir, n_gen)
+    t1 = time.time()
+    with open("temps.csv", "a") as file:
+        file.write(f"{i};{j};{t1 - t0}\n")
+
+
 def start_test_model(n_largeur_max, n_longueur_max, n_gen):
+    pool = concurrent.futures.ThreadPoolExecutor(max_workers=1000)
     for i in range(1, n_largeur_max):
         for j in range(1, n_longueur_max):
-            t0 = time.time()
-            model_start_blanc = [Model(input_layer_len, i, j, 50) for _ in range(100)]
-            model_end_blanc = [Model(input_layer_len, i, j, 50) for _ in range(100)]
-            model_start_noir = [Model(input_layer_len, i, j, 50) for _ in range(100)]
-            model_end_noir = [Model(input_layer_len, i, j, 50) for _ in range(100)]
-            training(model_start_blanc, model_end_blanc, model_start_noir, model_end_noir, n_gen)
-            t1 = time.time()
-            with open("temps.csv", "a") as file:
-                file.write(f"{i};{j};{t1 - t0}")
+            pool.submit(thread_test_model, i, j, n_gen)
 
 
 def load_model() -> (Model, Model, Model, Model):
