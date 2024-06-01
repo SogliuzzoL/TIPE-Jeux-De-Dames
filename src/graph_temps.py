@@ -14,7 +14,7 @@ with open(file_name, 'r') as file:
         Z.append(float(line.split(sep)[2]))
 
 meilleur_indice = Z.index(min(Z))
-print(f'Meilleur modèle: Longueur = {X[meilleur_indice]}, Largeur={Y[meilleur_indice]}')
+print(f'Meilleur modèle: Largeur = {X[meilleur_indice]}, Longueur = {Y[meilleur_indice]}')
 
 ax = plt.axes(projection='3d')
 ax.plot_trisurf(X, Y, Z, cmap='magma_r')

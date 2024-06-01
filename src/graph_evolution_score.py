@@ -27,7 +27,7 @@ Y = []
 Z = []
 dict_largeur = {}
 dict_longueur = {}
-surface = True
+surface = False
 
 for file in os.listdir(file_dir):
     gen = []
