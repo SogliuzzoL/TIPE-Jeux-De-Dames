@@ -211,6 +211,8 @@ def training(model_start_blanc: list, model_end_blanc: list, model_start_noir: l
     score_noirs_plus_id_model = []
     n = len(model_start_blanc)
     best_start_blanc, best_end_blanc, best_start_noir, best_end_noir = None, None, None, None
+    model_start_blanc_train, model_end_blanc_train, model_start_noir_train, model_end_noir_train = None, None, None, None
+    change_model = True
     for gen in range(n_gen):
         # Simulation des parties
         score_blancs = []
@@ -218,11 +220,12 @@ def training(model_start_blanc: list, model_end_blanc: list, model_start_noir: l
         result = []
         for i in range(n):
             # Simulation blancs
-            if gen < 1000:
+            if (gen // 50) % 2 == 0:
+                change_model = True
                 result = simulation_ia_vs_montecarlo((model_start_blanc[i], model_end_blanc[i]), 0)
             else:
                 result = simulation_ia_vs_ia((model_start_blanc[i], model_end_blanc[i]),
-                                             (best_start_noir, best_end_noir))
+                                             (model_start_noir_train, model_end_noir_train))
             score = result[1]['compte_blancs'] - result[1]['compte_noirs']
             if result[0] == 0:
                 score += 20
@@ -231,10 +234,10 @@ def training(model_start_blanc: list, model_end_blanc: list, model_start_noir: l
             score_blancs.append(score)
 
             # Simulation noirs
-            if gen < 1000:
+            if (gen // 50) % 2 == 0:
                 result = simulation_ia_vs_montecarlo((model_start_noir[i], model_end_noir[i]), 1)
             else:
-                result = simulation_ia_vs_ia((best_start_blanc, best_end_blanc),
+                result = simulation_ia_vs_ia((model_start_blanc_train, model_end_blanc_train),
                                              (model_start_noir[i], model_end_noir[i]))
             score = result[1]['compte_noirs'] - result[1]['compte_blancs']
             if result[0] == 0:
@@ -340,7 +343,9 @@ def training(model_start_blanc: list, model_end_blanc: list, model_start_noir: l
                        datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + f"_gen{gen + 1}_" + 'model_start_noir')
             torch.save(best_end_noir.state_dict(),
                        datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + f"_gen{gen + 1}_" + 'model_end_noir')
-
+        if ((gen + 1) // 50) % 2 == 1 and change_model:
+            change_model = False
+            model_start_blanc_train, model_end_blanc_train, model_start_noir_train, model_end_noir_train = best_start_blanc, best_end_blanc, best_start_noir, best_end_noir
     return best_start_blanc, best_end_blanc, best_start_noir, best_end_noir
 
 
