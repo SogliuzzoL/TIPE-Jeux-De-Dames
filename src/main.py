@@ -54,7 +54,7 @@ if __name__ == "__main__":
     Test model
     """
     if test_model:
-        start_test_model(10, 20, 1, 10, 100)
+        start_test_model(1, 100, 1, 20, 50)
         exit()
     """
     Création d'un nouveau plateau

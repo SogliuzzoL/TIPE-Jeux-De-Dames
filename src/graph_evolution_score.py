@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 
 file_dir = "\\\\DESKTOP-VR8PC8A\\Users\\Proxmox\\Documents\\ia-jeu-de-dames\\src\\"
 sep = ";"
-start = "score_2x"
+start = "score_"
 end = ".csv"
 
 surface = False
