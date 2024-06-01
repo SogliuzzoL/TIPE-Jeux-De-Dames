@@ -1,13 +1,12 @@
 import os
 
+import numpy as np
 from matplotlib import pyplot as plt
 
 file_dir = "\\\\DESKTOP-VR8PC8A\\Users\\Proxmox\\Documents\\ia-jeu-de-dames\\src\\"
 sep = ";"
 start = "score_"
 end = ".csv"
-
-surface = False
 
 n_moyenne_glissante = 10
 
@@ -26,6 +25,9 @@ def lissage_courbe(l):
 X = []
 Y = []
 Z = []
+dict_largeur = {}
+dict_longueur = {}
+surface = True
 
 for file in os.listdir(file_dir):
     gen = []
@@ -55,21 +57,40 @@ for file in os.listdir(file_dir):
         moyenne = []
         for i in range(len(noirs)):
             moyenne.append((noirs[i] + blancs[i]) / 2)
-        if not surface:
-            plt.plot(gen, moyenne, label=file.name.split('\\')[-1].replace('.csv', '').replace('score_', ''))
-        X.append(int(file.name.split('\\')[-1][len(start)]))
-        Y.append(int(file.name.split('x')[-1].split('.')[0]))
-        Z.append((lissage_courbe(moyenne_noirs)[-1] + lissage_courbe(moyenne_blancs)[-1]) / 2)
+        largeur = int(file.name.split('\\')[-1][len(start)])
+        longueur = int(file.name.split('x')[-1].split('.')[0])
+        score = np.mean([lissage_courbe(moyenne_noirs)[-1], lissage_courbe(moyenne_blancs)[-1]])
+        X.append(longueur)
+        Y.append(largeur)
+        Z.append(score)
+        if longueur in dict_longueur:
+            dict_longueur[longueur].append(score)
+        else:
+            dict_longueur[longueur] = [score]
+
+        if largeur in dict_largeur:
+            dict_largeur[largeur].append(score)
+        else:
+            dict_largeur[largeur] = [score]
+
+for key in dict_longueur.keys():
+    dict_longueur[key] = np.mean(dict_longueur[key])
+
+for key in dict_largeur.keys():
+    dict_largeur[key] = np.mean(dict_largeur[key])
 
 meilleur_indice = Z.index(max(Z))
 print(f'Meilleur modèle: Longueur = {X[meilleur_indice]}, Largeur={Y[meilleur_indice]}')
-
-if surface:
-    ax = plt.axes(projection='3d')
+if surface and len(dict_longueur.keys()) > 1 and len(dict_largeur.keys()) > 1:
+    fig, ax = plt.subplots(subplot_kw={'projection': '3d'})
     ax.plot_trisurf(X, Y, Z, cmap='magma')
-    ax.set_xlabel('Largeur du modèle')
-    ax.set_ylabel('Longueur du modèle')
-    ax.set_zlabel('Score')
+else:
+    plt.subplot(211)
+    plt.scatter(dict_longueur.keys(), dict_longueur.values(), label='Score en fonction de la longueur')
+    plt.legend()
 
-plt.legend()
+    plt.subplot(212)
+    plt.scatter(dict_largeur.keys(), dict_largeur.values(), label='Score en fonction de la largeur')
+    plt.legend()
+
 plt.show()
