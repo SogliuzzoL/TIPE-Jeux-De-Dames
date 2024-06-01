@@ -4,7 +4,6 @@ import datetime
 import random
 import time
 
-import numpy
 import numpy as np
 import torch
 from plateau import Plateau, coups_possibles
