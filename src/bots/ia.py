@@ -22,6 +22,8 @@ print(f"Using {device} device")
 torch.set_default_device(device)
 
 input_layer_len = 54
+hidden_largeur = 10
+hidden_longueur = 10
 
 
 class Model(Module):
@@ -366,15 +368,15 @@ def start_training(model_start_load_blanc=None, model_end_load_blanc=None, model
         model_end_blanc = [model_end_load_blanc for _ in range(20)]
         model_start_noir = [model_start_load_noir for _ in range(20)]
         model_end_noir = [model_end_load_noir for _ in range(20)]
-        model_start_blanc += [Model(input_layer_len, 4, 54 * 2, 50) for _ in range(80)]
-        model_end_blanc += [Model(input_layer_len, 4, 54 * 2, 50) for _ in range(80)]
-        model_start_noir += [Model(input_layer_len, 4, 54 * 2, 50) for _ in range(80)]
-        model_end_noir += [Model(input_layer_len, 4, 54 * 2, 50) for _ in range(80)]
+        model_start_blanc += [Model(input_layer_len, hidden_largeur, hidden_longueur, 50) for _ in range(80)]
+        model_end_blanc += [Model(input_layer_len, hidden_largeur, hidden_longueur, 50) for _ in range(80)]
+        model_start_noir += [Model(input_layer_len, hidden_largeur, hidden_longueur, 50) for _ in range(80)]
+        model_end_noir += [Model(input_layer_len, hidden_largeur, hidden_longueur, 50) for _ in range(80)]
     else:
-        model_start_blanc = [Model(input_layer_len, 4, 54 * 2, 50) for _ in range(100)]
-        model_end_blanc = [Model(input_layer_len, 4, 54 * 2, 50) for _ in range(100)]
-        model_start_noir = [Model(input_layer_len, 4, 54 * 2, 50) for _ in range(100)]
-        model_end_noir = [Model(input_layer_len, 4, 54 * 2, 50) for _ in range(100)]
+        model_start_blanc = [Model(input_layer_len, hidden_largeur, hidden_longueur, 50) for _ in range(100)]
+        model_end_blanc = [Model(input_layer_len, hidden_largeur, hidden_longueur, 50) for _ in range(100)]
+        model_start_noir = [Model(input_layer_len, hidden_largeur, hidden_longueur, 50) for _ in range(100)]
+        model_end_noir = [Model(input_layer_len, hidden_largeur, hidden_longueur, 50) for _ in range(100)]
     print(
         f'{datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S")} Nouveau training avec {len(model_start_blanc)} models')
     model_start_blanc, model_end_blanc, model_start_noir, model_end_noir = training(model_start_blanc, model_end_blanc,
@@ -411,16 +413,16 @@ def load_model() -> (Model, Model, Model, Model):
     """
     :return: Renvoie quatre models sous le format suivant: (model_loaded_start_blanc, model_loaded_end_blanc, model_loaded_start_noir, model_loaded_end_noir)
     """
-    model_start_blanc = Model(input_layer_len)
+    model_start_blanc = Model(input_layer_len, hidden_largeur, hidden_longueur, 50)
     model_start_blanc.load_state_dict(torch.load('model_start_blanc'))
     model_start_blanc.eval()
-    model_end_blanc = Model(input_layer_len)
+    model_end_blanc = Model(input_layer_len, hidden_largeur, hidden_longueur, 50)
     model_end_blanc.load_state_dict(torch.load('model_end_blanc'))
     model_end_blanc.eval()
-    model_start_noir = Model(input_layer_len)
+    model_start_noir = Model(input_layer_len, hidden_largeur, hidden_longueur, 50)
     model_start_noir.load_state_dict(torch.load('model_start_noir'))
     model_start_noir.eval()
-    model_end_noir = Model(input_layer_len)
+    model_end_noir = Model(input_layer_len, hidden_largeur, hidden_longueur, 50)
     model_end_noir.load_state_dict(torch.load('model_end_noir'))
     model_end_noir.eval()
     return model_start_blanc, model_end_blanc, model_start_noir, model_end_noir
