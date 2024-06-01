@@ -1,62 +1,75 @@
+import os
+
 from matplotlib import pyplot as plt
 
-file_name = "C:\\Users\\lolo4\\PycharmProjects\\ia-jeu-de-dames\\score_1x1.csv"
+file_dir = "\\\\DESKTOP-VR8PC8A\\Users\\Proxmox\\Documents\\ia-jeu-de-dames\\src\\"
 sep = ";"
+start = "score_2x"
+end = ".csv"
 
-gen = []
-moyenne_blancs = []
-moyenne_noirs = []
-mediane_blancs = []
-mediane_noirs = []
-ecart_type_blancs = []
-ecart_type_noirs = []
-max_blanc = []
-max_noir = []
+surface = False
 
-n_moyenne_glissante = 1
-
-with open(file_name, 'r') as file:
-    for line in file:
-        line_sep = line.split(sep)
-        gen.append(int(line_sep[0]))
-        moyenne_blancs.append(float(line_sep[1]))
-        moyenne_noirs.append(float(line_sep[2]))
-        mediane_blancs.append(float(line_sep[3]))
-        mediane_noirs.append(float(line_sep[4]))
-        ecart_type_blancs.append(float(line_sep[5]))
-        ecart_type_noirs.append(float(line_sep[6]))
-        max_blanc.append(float(line_sep[7]))
-        max_noir.append(float(line_sep[8].replace("\n", "")))
+n_moyenne_glissante = 10
 
 
 def lissage_courbe(l):
     moyenne_glissante = []
-    for i in range(len(l) - n_moyenne_glissante):
+    for i in range(len(l)):
         somme = 0
-        for j in range(n_moyenne_glissante):
-            somme += l[i + j]
+        for j in range(min(i, n_moyenne_glissante)):
+            somme += l[i - j]
         somme /= n_moyenne_glissante
         moyenne_glissante.append(somme)
     return moyenne_glissante
 
 
-fig, ax = plt.subplots(4, 1)
+X = []
+Y = []
+Z = []
 
-# Moyenne Glissante
-ax[0].plot(gen[:len(gen) - n_moyenne_glissante], lissage_courbe(moyenne_blancs), label="blancs")
-ax[0].plot(gen[:len(gen) - n_moyenne_glissante], lissage_courbe(moyenne_noirs), label="noirs")
-ax[0].set_title('Moyenne du score en fonction de la génération')
+for file in os.listdir(file_dir):
+    gen = []
+    moyenne_blancs = []
+    moyenne_noirs = []
+    mediane_blancs = []
+    mediane_noirs = []
+    ecart_type_blancs = []
+    ecart_type_noirs = []
+    max_blanc = []
+    max_noir = []
+    if file[:len(start)] == start and file[-len(end):] == end:
+        with open(file_dir + file, 'r') as file:
+            for line in file:
+                line_sep = line.split(sep)
+                gen.append(int(line_sep[0]))
+                moyenne_blancs.append(float(line_sep[1]))
+                moyenne_noirs.append(float(line_sep[2]))
+                mediane_blancs.append(float(line_sep[3]))
+                mediane_noirs.append(float(line_sep[4]))
+                ecart_type_blancs.append(float(line_sep[5]))
+                ecart_type_noirs.append(float(line_sep[6]))
+                max_blanc.append(float(line_sep[7]))
+                max_noir.append(float(line_sep[8].replace("\n", "")))
+        noirs = lissage_courbe(moyenne_noirs)
+        blancs = lissage_courbe(moyenne_blancs)
+        moyenne = []
+        for i in range(len(noirs)):
+            moyenne.append((noirs[i] + blancs[i]) / 2)
+        if not surface:
+            plt.plot(gen, moyenne, label=file.name.split('\\')[-1].replace('.csv', '').replace('score_', ''))
+        X.append(int(file.name.split('\\')[-1][len(start)]))
+        Y.append(int(file.name.split('x')[-1].split('.')[0]))
+        Z.append((lissage_courbe(moyenne_noirs)[-1] + lissage_courbe(moyenne_blancs)[-1]) / 2)
 
-ax[1].plot(gen[:len(gen) - n_moyenne_glissante], lissage_courbe(mediane_blancs), label="blancs")
-ax[1].plot(gen[:len(gen) - n_moyenne_glissante], lissage_courbe(mediane_noirs), label="noirs")
-ax[1].set_title('Médiane du score en fonction de la génération')
+meilleur_indice = Z.index(max(Z))
+print(f'Meilleur modèle: Longueur = {X[meilleur_indice]}, Largeur={Y[meilleur_indice]}')
 
-ax[2].plot(gen[:len(gen) - n_moyenne_glissante], lissage_courbe(ecart_type_blancs), label="blancs")
-ax[2].plot(gen[:len(gen) - n_moyenne_glissante], lissage_courbe(ecart_type_noirs), label="noirs")
-ax[2].set_title('Ecart-type du score en fonction de la génération')
+if surface:
+    ax = plt.axes(projection='3d')
+    ax.plot_trisurf(X, Y, Z, cmap='magma')
+    ax.set_xlabel('Largeur du modèle')
+    ax.set_ylabel('Longueur du modèle')
+    ax.set_zlabel('Score')
 
-ax[3].plot(gen[:len(gen) - n_moyenne_glissante], lissage_courbe(max_blanc), label="blancs")
-ax[3].plot(gen[:len(gen) - n_moyenne_glissante], lissage_courbe(max_noir), label="noirs")
-ax[3].set_title('Score maximum en fonction de la génération')
-
+plt.legend()
 plt.show()
