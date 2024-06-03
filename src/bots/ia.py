@@ -246,8 +246,6 @@ def training(model_start_blanc: list, model_end_blanc: list, model_start_noir: l
                 score += 20
             score_noirs.append(score)
 
-        print(score_noirs, score_blancs)
-
         # Trie des meilleurs models
         score_blancs_plus_id_model = [(score_blancs[i], i) for i in range(len(score_blancs))]
         score_blancs_plus_id_model.sort(key=lambda x: x[0], reverse=True)
