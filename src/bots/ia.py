@@ -401,7 +401,7 @@ def thread_test_model(i, j, n_gen):
 
 
 def start_test_model(n_largeur_depart, n_largeur_fin, n_longueur_depart, n_longueur_fin, n_gen):
-    pool = concurrent.futures.ThreadPoolExecutor(max_workers=5)
+    pool = concurrent.futures.ThreadPoolExecutor(max_workers=1)
     for i in range(n_largeur_depart, n_largeur_fin):
         for j in range(n_longueur_depart, n_longueur_fin):
             pool.submit(thread_test_model, i, j, n_gen)

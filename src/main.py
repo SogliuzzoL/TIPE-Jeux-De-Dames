@@ -10,7 +10,7 @@ if __name__ == "__main__":
     Paramètre de la fenêtre
     """
     test_dames = False
-    test_model = False
+    test_model = True
     fast_simu = False
     human_vs_bot = True
     player_side = 0  # 0 = Blanc, 1 = Noir
@@ -54,7 +54,7 @@ if __name__ == "__main__":
     Test model
     """
     if test_model:
-        start_test_model(2, 100, 1, 8, 50)
+        start_test_model(1, 15, 8, 10, 50)
         exit()
     """
     Création d'un nouveau plateau
@@ -67,8 +67,7 @@ if __name__ == "__main__":
     """
     if ia:
         if create_new_model or not (
-                os.path.isfile('model_start_blanc') and os.path.isfile('model_end_blanc') and os.path.isfile(
-            'model_start_noir') and os.path.isfile('model_end_noir')):
+                os.path.isfile('model_start_blanc') and os.path.isfile('model_end_blanc') and os.path.isfile('model_start_noir') and os.path.isfile('model_end_noir')):
             model_start_blanc, model_end_blanc, model_start_noir, model_end_noir = start_training()
         else:
             model_start_blanc, model_end_blanc, model_start_noir, model_end_noir = load_model()
