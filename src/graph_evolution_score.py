@@ -3,7 +3,7 @@ import os
 import numpy as np
 from matplotlib import pyplot as plt
 
-file_dir = "\\\\DESKTOP-VR8PC8A\\Users\\Proxmox\\Documents\\ia-jeu-de-dames\\src\\"
+file_dir = "datas\\"
 sep = ";"
 start = "score_"
 end = ".csv"
@@ -57,7 +57,7 @@ for file in os.listdir(file_dir):
         moyenne = []
         for i in range(len(noirs)):
             moyenne.append((noirs[i] + blancs[i]) / 2)
-        largeur = int(file.name.split('\\')[-1][len(start)])
+        largeur = int(file.name.split('\\')[-1].split('x')[0].replace(start, ''))
         longueur = int(file.name.split('x')[-1].split('.')[0])
         score = np.mean([lissage_courbe(moyenne_noirs)[-1], lissage_courbe(moyenne_blancs)[-1]])
         X.append(longueur)

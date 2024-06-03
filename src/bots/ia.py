@@ -21,8 +21,8 @@ print(f"Using {device} device")
 torch.set_default_device(device)
 
 input_layer_len = 54
-hidden_largeur = 10
-hidden_longueur = 10
+hidden_largeur = 7
+hidden_longueur = 7
 
 
 class Model(Module):
@@ -53,7 +53,7 @@ class Model(Module):
         return data
 
 
-def predict_ia(row, model) -> numpy.ndarray:
+def predict_ia(row, model) -> np.ndarray:
     """
     :param row: Liste des données d'entrée
     :param model: Model à utiliser
@@ -332,8 +332,7 @@ def training(model_start_blanc: list, model_end_blanc: list, model_start_noir: l
             print(
                 f'{datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S")} Génération {gen + 1}. Moyenne de temps '
                 f'pour une génération:{(t1 - t0) / (gen + 1)}')
-            print(
-                f"{datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S")} Score Models Blancs: {np.mean(score_blancs)}, Noirs: {np.mean(score_noirs)}")
+            print(f"{datetime.datetime.now().strftime('%d/%m/%Y, %H:%M:%S')} Score Models Blancs: {np.mean(score_blancs)}, Noirs: {np.mean(score_noirs)}")
             # Sauvegarde du meilleur model
         if (gen + 1) % 250 == 0:
             torch.save(best_start_blanc.state_dict(),

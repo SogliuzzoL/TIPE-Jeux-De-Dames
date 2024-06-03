@@ -1,6 +1,6 @@
 from matplotlib import pyplot as plt
 
-file_name = "\\\\DESKTOP-VR8PC8A\\Users\\Proxmox\\Documents\\ia-jeu-de-dames\\src\\temps.csv"
+file_name = "datas\\temps.csv"
 sep = ";"
 
 X = []
