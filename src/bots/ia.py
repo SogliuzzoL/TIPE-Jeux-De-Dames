@@ -218,11 +218,10 @@ def training(model_start_blanc: list, model_end_blanc: list, model_start_noir: l
         # Simulation des parties
         score_blancs = []
         score_noirs = []
-        result = []
+        N = 50
         for i in range(n):
             # Simulation blancs
-            if (gen // 50) % 2 == 0:
-                change_model = True
+            if gen <= N:
                 result = simulation_ia_vs_montecarlo((model_start_blanc[i], model_end_blanc[i]), 0)
             else:
                 result = simulation_ia_vs_ia((model_start_blanc[i], model_end_blanc[i]),
@@ -235,7 +234,7 @@ def training(model_start_blanc: list, model_end_blanc: list, model_start_noir: l
             score_blancs.append(score)
 
             # Simulation noirs
-            if (gen // 50) % 2 == 0:
+            if gen <= N:
                 result = simulation_ia_vs_montecarlo((model_start_noir[i], model_end_noir[i]), 1)
             else:
                 result = simulation_ia_vs_ia((model_start_blanc_train, model_end_blanc_train),
@@ -246,6 +245,8 @@ def training(model_start_blanc: list, model_end_blanc: list, model_start_noir: l
             elif result[0] == 1:
                 score += 20
             score_noirs.append(score)
+
+        print(score_noirs, score_blancs)
 
         # Trie des meilleurs models
         score_blancs_plus_id_model = [(score_blancs[i], i) for i in range(len(score_blancs))]
@@ -343,8 +344,8 @@ def training(model_start_blanc: list, model_end_blanc: list, model_start_noir: l
                        datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + f"_gen{gen + 1}_" + 'model_start_noir')
             torch.save(best_end_noir.state_dict(),
                        datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + f"_gen{gen + 1}_" + 'model_end_noir')
-        if ((gen + 1) // 50) % 2 == 1 and change_model:
-            change_model = False
+        if gen % N == 0:
+            print('Changement de model de training')
             model_start_blanc_train, model_end_blanc_train, model_start_noir_train, model_end_noir_train = best_start_blanc, best_end_blanc, best_start_noir, best_end_noir
     return best_start_blanc, best_end_blanc, best_start_noir, best_end_noir
 

@@ -10,7 +10,7 @@ if __name__ == "__main__":
     Paramètre de la fenêtre
     """
     test_dames = False
-    test_model = True
+    test_model = False
     fast_simu = False
     human_vs_bot = True
     player_side = 0  # 0 = Blanc, 1 = Noir
