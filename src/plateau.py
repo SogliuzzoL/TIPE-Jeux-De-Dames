@@ -62,9 +62,9 @@ class Plateau:
             if blanc_present and noir_present:
                 return -1
         if blanc_present:
-            return 1
-        else:
             return 0
+        else:
+            return 1
 
     def move_point(self, start_position: int, end_position: int):
         """
@@ -114,7 +114,7 @@ class Plateau:
                         case = int(temp_coup[i])
                         parity = (case - 1) // 5 % 2
                         while case + (6 - parity) < 51:
-                            if case + (6 - parity) == int(temp_coup[i+1]):
+                            if case + (6 - parity) == int(temp_coup[i + 1]):
                                 pion_mange.append(case)
                                 break
                             case += (6 - parity)
@@ -122,7 +122,7 @@ class Plateau:
                         case = int(temp_coup[i])
                         parity = (case - 1) // 5 % 2
                         while case + (5 - parity) < 51:
-                            if case + (5 - parity) == int(temp_coup[i+1]):
+                            if case + (5 - parity) == int(temp_coup[i + 1]):
                                 pion_mange.append(case)
                                 break
                             case += (5 - parity)
@@ -131,7 +131,7 @@ class Plateau:
                         case = int(temp_coup[i])
                         parity = (case - 1) // 5 % 2
                         while case - (5 + parity) > 0:
-                            if case - (5 + parity) == int(temp_coup[i+1]):
+                            if case - (5 + parity) == int(temp_coup[i + 1]):
                                 pion_mange.append(case)
                                 break
                             case -= (5 + parity)
@@ -139,7 +139,7 @@ class Plateau:
                         case = int(temp_coup[i])
                         parity = (case - 1) // 5 % 2
                         while case - (4 + parity) > 0:
-                            if case - (4 + parity) == int(temp_coup[i+1]):
+                            if case - (4 + parity) == int(temp_coup[i + 1]):
                                 pion_mange.append(case)
                                 break
                             case -= (4 + parity)
@@ -187,8 +187,8 @@ def coups_prises_pions(case: int, positions: dict, couleur=0, tree=None, parent=
                 try:
                     tree.create_node(f'{case}x{case + datas[i][1]}', f'{case}x{case + datas[i][1]}', parent=parent)
                 except treelib.exceptions.DuplicatedNodeIdError:
-                    tree.create_node(f'{case}x{case + datas[i][1]}-{time.time()}',
-                                     f'{case}x{case + datas[i][1]}-{time.time()}', parent=parent)
+                    tree.create_node(f'{case}x{case + datas[i][1]}-{time.perf_counter()}',
+                                     f'{case}x{case + datas[i][1]}-{time.perf_counter()}', parent=parent)
                 coups_prises_pions(case + datas[i][1], positions_copie, couleur, tree, f'{case}x{case + datas[i][1]}')
     return tree
 
@@ -219,26 +219,27 @@ def coup_prises_dames(case: int, positions: dict, couleur=0, tree=None, parent=N
             copy_case - (5 + parity)) > 0 and disallowed_orientation != 0:
         copy_case -= (5 + parity)
         parity = (copy_case - 1) // 5 % 2
-        if type(parent) != int:
+        if disallowed_orientation == 3:
             new = f"{case}>{copy_case}"
             try:
                 tree.create_node(new, new, parent=parent)
             except treelib.exceptions.DuplicatedNodeIdError:
                 new += f"-{time.perf_counter()}"
                 tree.create_node(new, new, parent=parent)
+            coup_prises_dames(copy_case, copy_positions, couleur, tree, new, 3)
     if copy_case - (5 + parity) in copy_positions and copy_case - 11 not in copy_positions and (
-            (copy_case - 1) // 5 % 2) == ((copy_case - 12) // 5 % 2) and disallowed_orientation != 0 and copy_case - 11 > 0:
-        if copy_positions[copy_case - (5 + parity)][0] == couleur:
-            pass
-        copy_positions.pop(copy_case - (5 + parity))
-        copy_case -= 11
-        new_parent = f"{case}x{copy_case}"
-        try:
-            tree.create_node(new_parent, new_parent, parent=parent)
-        except treelib.exceptions.DuplicatedNodeIdError:
-            new_parent += f"-{time.perf_counter()}"
-            tree.create_node(new_parent, new_parent, parent=parent)
-        coup_prises_dames(copy_case, copy_positions, couleur, tree, new_parent, 3)
+            (copy_case - 1) // 5 % 2) == (
+            (copy_case - 12) // 5 % 2) and disallowed_orientation != 0 and copy_case - 11 > 0:
+        if copy_positions[copy_case - (5 + parity)][0] != couleur:
+            copy_positions.pop(copy_case - (5 + parity))
+            copy_case -= 11
+            new_parent = f"{case}x{copy_case}"
+            try:
+                tree.create_node(new_parent, new_parent, parent=parent)
+            except treelib.exceptions.DuplicatedNodeIdError:
+                new_parent += f"-{time.perf_counter()}"
+                tree.create_node(new_parent, new_parent, parent=parent)
+            coup_prises_dames(copy_case, copy_positions, couleur, tree, new_parent, 3)
     # En haut à droite
     copy_positions = positions.copy()
     copy_case = case
@@ -249,19 +250,27 @@ def coup_prises_dames(case: int, positions: dict, couleur=0, tree=None, parent=N
             copy_case - (4 + parity)) > 0 and disallowed_orientation != 1:
         copy_case -= (4 + parity)
         parity = (copy_case - 1) // 5 % 2
+        if disallowed_orientation == 2:
+            new = f"{case}>{copy_case}"
+            try:
+                tree.create_node(new, new, parent=parent)
+            except treelib.exceptions.DuplicatedNodeIdError:
+                new += f"-{time.perf_counter()}"
+                tree.create_node(new, new, parent=parent)
+            coup_prises_dames(copy_case, copy_positions, couleur, tree, new, 2)
     if copy_case - (4 + parity) in copy_positions and copy_case - 9 not in copy_positions and (
-            (copy_case - 1) // 5 % 2) == ((copy_case - 10) // 5 % 2) and disallowed_orientation != 1 and copy_case - 9 > 0:
-        if copy_positions[copy_case - (4 + parity)][0] == couleur:
-            pass
-        copy_positions.pop(copy_case - (4 + parity))
-        copy_case -= 9
-        new_parent = f"{case}x{copy_case}"
-        try:
-            tree.create_node(new_parent, new_parent, parent=parent)
-        except treelib.exceptions.DuplicatedNodeIdError:
-            new_parent += f"-{time.perf_counter()}"
-            tree.create_node(new_parent, new_parent, parent=parent)
-        coup_prises_dames(copy_case, copy_positions, couleur, tree, new_parent, 2)
+            (copy_case - 1) // 5 % 2) == (
+            (copy_case - 10) // 5 % 2) and disallowed_orientation != 1 and copy_case - 9 > 0:
+        if copy_positions[copy_case - (4 + parity)][0] != couleur:
+            copy_positions.pop(copy_case - (4 + parity))
+            copy_case -= 9
+            new_parent = f"{case}x{copy_case}"
+            try:
+                tree.create_node(new_parent, new_parent, parent=parent)
+            except treelib.exceptions.DuplicatedNodeIdError:
+                new_parent += f"-{time.perf_counter()}"
+                tree.create_node(new_parent, new_parent, parent=parent)
+            coup_prises_dames(copy_case, copy_positions, couleur, tree, new_parent, 2)
     # En bas à gauche
     copy_positions = positions.copy()
     copy_case = case
@@ -272,19 +281,27 @@ def coup_prises_dames(case: int, positions: dict, couleur=0, tree=None, parent=N
             copy_case + (5 - parity)) < 51 and disallowed_orientation != 2:
         copy_case += (5 - parity)
         parity = (copy_case - 1) // 5 % 2
+        if disallowed_orientation == 1:
+            new = f"{case}>{copy_case}"
+            try:
+                tree.create_node(new, new, parent=parent)
+            except treelib.exceptions.DuplicatedNodeIdError:
+                new += f"-{time.perf_counter()}"
+                tree.create_node(new, new, parent=parent)
+            coup_prises_dames(copy_case, copy_positions, couleur, tree, new, 1)
     if copy_case + (5 - parity) in copy_positions and copy_case + 9 not in copy_positions and (
-            (copy_case - 1) // 5 % 2) == ((copy_case + 8) // 5 % 2) and disallowed_orientation != 2 and copy_case + 9 < 51:
-        if copy_positions[copy_case + (5 - parity)][0] == couleur:
-            pass
-        copy_positions.pop(copy_case + (5 - parity))
-        copy_case += 9
-        new_parent = f"{case}x{copy_case}"
-        try:
-            tree.create_node(new_parent, new_parent, parent=parent)
-        except treelib.exceptions.DuplicatedNodeIdError:
-            new_parent += f"-{time.perf_counter()}"
-            tree.create_node(new_parent, new_parent, parent=parent)
-        coup_prises_dames(copy_case, copy_positions, couleur, tree, new_parent, 1)
+            (copy_case - 1) // 5 % 2) == (
+            (copy_case + 8) // 5 % 2) and disallowed_orientation != 2 and copy_case + 9 < 51:
+        if copy_positions[copy_case + (5 - parity)][0] != couleur:
+            copy_positions.pop(copy_case + (5 - parity))
+            copy_case += 9
+            new_parent = f"{case}x{copy_case}"
+            try:
+                tree.create_node(new_parent, new_parent, parent=parent)
+            except treelib.exceptions.DuplicatedNodeIdError:
+                new_parent += f"-{time.perf_counter()}"
+                tree.create_node(new_parent, new_parent, parent=parent)
+            coup_prises_dames(copy_case, copy_positions, couleur, tree, new_parent, 1)
     # En bas à droite
     copy_positions = positions.copy()
     copy_case = case
@@ -295,19 +312,27 @@ def coup_prises_dames(case: int, positions: dict, couleur=0, tree=None, parent=N
             copy_case + (6 - parity)) < 51 and disallowed_orientation != 3:
         copy_case += (6 - parity)
         parity = (copy_case - 1) // 5 % 2
+        if disallowed_orientation == 0:
+            new = f"{case}>{copy_case}"
+            try:
+                tree.create_node(new, new, parent=parent)
+            except treelib.exceptions.DuplicatedNodeIdError:
+                new += f"-{time.perf_counter()}"
+                tree.create_node(new, new, parent=parent)
+            coup_prises_dames(copy_case, copy_positions, couleur, tree, new, 0)
     if copy_case + (6 - parity) in copy_positions and copy_case + 11 not in copy_positions and (
-            (copy_case - 1) // 5 % 2) == ((copy_case + 10) // 5 % 2) and disallowed_orientation != 3 and copy_case + 11 < 51:
-        if copy_positions[copy_case + (6 - parity)][0] == couleur:
-            pass
-        copy_positions.pop(copy_case + (6 - parity))
-        copy_case += 11
-        new_parent = f"{case}x{copy_case}"
-        try:
-            tree.create_node(new_parent, new_parent, parent=parent)
-        except treelib.exceptions.DuplicatedNodeIdError:
-            new_parent += f"-{time.perf_counter()}"
-            tree.create_node(new_parent, new_parent, parent=parent)
-        coup_prises_dames(copy_case, copy_positions, couleur, tree, new_parent, 0)
+            (copy_case - 1) // 5 % 2) == (
+            (copy_case + 10) // 5 % 2) and disallowed_orientation != 3 and copy_case + 11 < 51:
+        if copy_positions[copy_case + (6 - parity)][0] != couleur:
+            copy_positions.pop(copy_case + (6 - parity))
+            copy_case += 11
+            new_parent = f"{case}x{copy_case}"
+            try:
+                tree.create_node(new_parent, new_parent, parent=parent)
+            except treelib.exceptions.DuplicatedNodeIdError:
+                new_parent += f"-{time.perf_counter()}"
+                tree.create_node(new_parent, new_parent, parent=parent)
+            coup_prises_dames(copy_case, copy_positions, couleur, tree, new_parent, 0)
     return tree
 
 
@@ -407,16 +432,33 @@ def coups_possibles(positions: dict, couleur=0):
                     paths = tree.paths_to_leaves()
                     for path in paths:
                         if max_coups < len(path):
-                            max_coups = len(path)
-                            if '>' in path[-1]:
-                                max_coups -= 1
-                                if path[0:-1] not in coups_tempo:
-                                    coups_tempo.append(path[0:-1])
+                            temp_max = 1
+                            k = -1
+                            for i in range(1, len(path)):
+                                if 'x' in path[i]:
+                                    temp_max += 1
+                            if max_coups < temp_max:
+                                max_coups = temp_max
+                            while '>' in path[k]:
+                                if path[0:k] not in coups_tempo:
+                                    coups_tempo.append(path[0:k])
+                                k -= 1
                         coups_tempo.append(path)
 
     # Trie des coups pour prises
     for i in range(len(coups_tempo)):
         if len(coups_tempo[i]) >= max_coups:
+            k = -1
+            while '>' in coups_tempo[i][k]:
+                k -= 1
+            if len(coups_tempo[i]) + k + 1 < max_coups:
+                continue
+            real_coup_number = 1
+            for j in range(1, len(coups_tempo[i])):
+                if 'x' in coups_tempo[i][j]:
+                    real_coup_number += 1
+            if real_coup_number < max_coups:
+                continue
             for j in range(len(coups_tempo[i])):
                 if '-' in str(coups_tempo[i][j]):
                     split = str(coups_tempo[i][j]).split('-')
@@ -502,3 +544,17 @@ def affichage_plateau(plateau: Plateau, screen: Surface, case_depart: int):
                 pygame.draw.circle(screen, white_dame_color,
                                    (start_x + case_x * case_size + case_size // 2, case_y * case_size + case_size // 2),
                                    case_size * 0.75 // 2)
+
+
+def display_coup(coups: list) -> list:
+    real_coup = []
+    for coup in coups:
+        if 'x' in coup:
+            split = coup.split('x')
+            if f'{split[0]}x{split[-1]}' not in real_coup:
+                real_coup.append(f'{split[0]}x{split[-1]}')
+        else:
+            split = coup.split('-')
+            if f'{split[0]}-{split[-1]}' not in real_coup:
+                real_coup.append(f'{split[0]}-{split[-1]}')
+    return real_coup

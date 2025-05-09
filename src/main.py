@@ -1,7 +1,8 @@
-import datetime
-import random
+import os.path
 
+from bots.ia import *
 from plateau import *
+from bots.minimax import run_minimax
 
 if __name__ == "__main__":
     """
@@ -10,6 +11,12 @@ if __name__ == "__main__":
     test_dames = False
     fast_simu = False
     human_vs_bot = True
+    bot_used = 0  # 0 = Monte-Carlo, 1 = Minimax, 2 = IA
+    ia = True
+    ia_training = False
+    ia_infinite_training = False
+    create_new_model = False
+    model_start, model_end = None, None
     game_fps = 60
     case_depart = 0
     case_arrive = 0
@@ -27,7 +34,20 @@ if __name__ == "__main__":
     """
     plateau = Plateau()
     if test_dames:
-        plateau.pions = [Pion(32, 1, False), Pion(43, 0, True)]
+        plateau.pions = [Pion(30, 1, True), Pion(19, 0, False), Pion(8, 0, False), Pion(18, 0, False)]
+    """
+    Création IA
+    """
+    if ia:
+        if create_new_model or not (os.path.isfile('model_start') and os.path.isfile('model_end')):
+            model_start, model_end = start_training()
+        else:
+            model_start, model_end = load_model()
+            if ia_training:
+                model_start, model_end = start_training(model_start, model_end)
+
+    while ia_infinite_training:
+        model_start, model_end = start_training(model_start, model_end)
     """
     Création de la fenêtre
     """
@@ -66,30 +86,44 @@ if __name__ == "__main__":
                     coups = coups_possibles(plateau.positions(), plateau.round_side)
                     for coup in coups:
                         if coup.startswith(str(case_depart)) and coup.endswith(str(case_arrive)):
-                            plateau.jouer_coup(coup, plateau.round_side)
-                            if plateau.round_side:
-                                plateau.round_side = 0
-                            else:
-                                plateau.round_side = 1
-                            print(f"Coup joué: {coup}")
-                            waiting = False
+                            if (len(str(case_arrive)) == 1 and (coup[-2] == 'x' or coup[-2] == '-')) or (
+                                    len(str(case_arrive)) == 2 and (coup[-3] == 'x' or coup[-3] == '-')):
+                                plateau.jouer_coup(coup, plateau.round_side)
+                                if plateau.round_side:
+                                    plateau.round_side = 0
+                                else:
+                                    plateau.round_side = 1
+                                print(f"Coup joué: {coup}")
+                                waiting = False
+                                break
                     case_depart = 0
                     case_arrive = 0
+        """
+        Vérification de la victoire d'un camp
+        """
         win = plateau.check_win()
-        if win != -1 and not test_dames:
+        if win != -1:
             if win == 1:
                 total_win_noir += 1
             elif win == 0:
                 total_win_blanc += 1
             nb_parties += 1
-            print(f'[{datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S")}] - {str(float(total_win_blanc) / float(nb_parties) * 100)}% de parties gagnées par le blanc et {str(float(total_win_noir) / float(nb_parties) * 100)}% de parties gagnées par le noir (Blanc: {total_win_blanc}, Noir: {total_win_noir}, Total parties: {nb_parties})')
+            print(
+                f'[{datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S")}] - {str(float(total_win_blanc) / float(nb_parties) * 100)}% de parties gagnées par le blanc et {str(float(total_win_noir) / float(nb_parties) * 100)}% de parties gagnées par le noir (Blanc: {total_win_blanc}, Noir: {total_win_noir}, Total parties: {nb_parties})')
             plateau = Plateau()
+        """
+        Simulation du bot
+        """
         if fast_simu or human_vs_bot and plateau.round_side:
             coups = coups_possibles(plateau.positions(), plateau.round_side)
             if len(coups) == 0:
                 plateau = Plateau()
             else:
                 coup = coups[random.randint(0, len(coups) - 1)]
+                if ia and bot_used == 2:
+                    coup = run_ia(plateau, model_start, model_end)
+                elif bot_used == 1:
+                    coup = run_minimax(plateau)
                 plateau.jouer_coup(coup, plateau.round_side)
                 if plateau.round_side:
                     plateau.round_side = 0
@@ -104,18 +138,26 @@ if __name__ == "__main__":
         screen.fill(window_background_color)
         positions = plateau.positions()
         coups = coups_possibles(positions, plateau.round_side)
+        real_coup = display_coup(coups)
         font = pygame.font.SysFont(pygame.font.get_fonts()[0], 24)
         text = font.render("Parties Gagnées :", True, (50, 50, 50))
         screen.blit(text, (5, 24 * 0 + 5))
         text = font.render(f"Blanc: {total_win_blanc}, Noirs: {total_win_noir}", True, (125, 125, 125))
         screen.blit(text, (5, 24 * 1 + 5))
-        text = font.render(f"Nuls: {nb_parties - total_win_blanc - total_win_noir}, Total: {nb_parties}", True, (125, 125, 125))
+        text = font.render(f"Nuls: {nb_parties - total_win_blanc - total_win_noir}, Total: {nb_parties}", True,
+                           (125, 125, 125))
         screen.blit(text, (5, 24 * 2 + 5))
-        text = font.render("Coups possibles :", True, (50, 50, 50))
+        text = font.render("Coup conseillé :", True, (50, 50, 50))
         screen.blit(text, (5, 24 * 3 + 5))
-        for i in range(1, len(coups) + 1):
-            text = font.render(coups[i - 1], True, (125, 125, 125))
-            screen.blit(text, (10, 24 * (i + 3) + 5))
+        ia_coups = display_coup([run_ia(plateau, model_start, model_end)])
+        if len(ia_coups) != 0:
+            text = font.render(f'IA: {ia_coups[0]}', True, (125, 125, 125))
+            screen.blit(text, (5, 24 * 4 + 5))
+        text = font.render("Coups possibles :", True, (50, 50, 50))
+        screen.blit(text, (5, 24 * 5 + 5))
+        for i in range(1, len(real_coup) + 1):
+            text = font.render(real_coup[i - 1], True, (125, 125, 125))
+            screen.blit(text, (10, 24 * (i + 5) + 5))
         waiting = True
         """
         Modification graphique et mise à jour de la fenêtre
