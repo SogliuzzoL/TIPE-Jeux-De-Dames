@@ -1,22 +1,25 @@
+import json
 import os.path
 
 from bots.ia import *
-from plateau import *
 from bots.minimax import run_minimax
+from plateau import *
 
 if __name__ == "__main__":
     """
     Paramètre de la fenêtre
     """
     test_dames = False
+    test_model = False
     fast_simu = False
     human_vs_bot = True
-    bot_used = 0  # 0 = Monte-Carlo, 1 = Minimax, 2 = IA
+    player_side = 0  # 0 = Blanc, 1 = Noir
+    bot_used = 2  # 0 = Monte-Carlo, 1 = Minimax, 2 = IA
     ia = True
     ia_training = False
     ia_infinite_training = False
     create_new_model = False
-    model_start, model_end = None, None
+    model_start_blanc, model_end_blanc, model_start_noir, model_end_noir = None, None, None, None
     game_fps = 60
     case_depart = 0
     case_arrive = 0
@@ -30,6 +33,30 @@ if __name__ == "__main__":
     running = True
     waiting = False
     """
+    Chargement paramètre JSON
+    """
+    try:
+        config = open('config.json')
+        datas = json.load(config)
+        test_dames = datas['test_dames']
+        fast_simu = datas['fast_simu']
+        human_vs_bot = datas['human_vs_bot']
+        bot_used = datas['bot_used']
+        ia = datas['ia']
+        ia_training = datas['ia_training']
+        ia_infinite_training = datas['ia_infinite_training']
+        create_new_model = datas['create_new_model']
+        player_side = datas['player_side']
+    except FileNotFoundError:
+        print('Fichier de config inexistant !')
+
+    """
+    Test model
+    """
+    if test_model:
+        start_test_model(1, 15, 8, 10, 50)
+        exit()
+    """
     Création d'un nouveau plateau
     """
     plateau = Plateau()
@@ -39,15 +66,22 @@ if __name__ == "__main__":
     Création IA
     """
     if ia:
-        if create_new_model or not (os.path.isfile('model_start') and os.path.isfile('model_end')):
-            model_start, model_end = start_training()
+        if create_new_model or not (
+                os.path.isfile('model_start_blanc') and os.path.isfile('model_end_blanc') and os.path.isfile('model_start_noir') and os.path.isfile('model_end_noir')):
+            model_start_blanc, model_end_blanc, model_start_noir, model_end_noir = start_training()
         else:
-            model_start, model_end = load_model()
+            model_start_blanc, model_end_blanc, model_start_noir, model_end_noir = load_model()
             if ia_training:
-                model_start, model_end = start_training(model_start, model_end)
+                model_start_blanc, model_end_blanc, model_start_noir, model_end_noir = start_training(model_start_blanc,
+                                                                                                      model_end_blanc,
+                                                                                                      model_start_noir,
+                                                                                                      model_end_noir)
 
     while ia_infinite_training:
-        model_start, model_end = start_training(model_start, model_end)
+        model_start_blanc, model_end_blanc, model_start_noir, model_end_noir = start_training(model_start_blanc,
+                                                                                              model_end_blanc,
+                                                                                              model_start_noir,
+                                                                                              model_end_noir)
     """
     Création de la fenêtre
     """
@@ -55,6 +89,11 @@ if __name__ == "__main__":
     screen = pygame.display.set_mode(window_size)
     pygame.display.set_caption(window_name)
     clock = pygame.time.Clock()
+    try:
+        icon = pygame.image.load('icon.ico')
+        pygame.display.set_icon(icon)
+    except FileNotFoundError:
+        print('Fichier icon.ico inexistant !')
     """
     Boucle de la fenêtre
     """
@@ -114,14 +153,17 @@ if __name__ == "__main__":
         """
         Simulation du bot
         """
-        if fast_simu or human_vs_bot and plateau.round_side:
+        if fast_simu or human_vs_bot and plateau.round_side != player_side:
             coups = coups_possibles(plateau.positions(), plateau.round_side)
             if len(coups) == 0:
                 plateau = Plateau()
             else:
                 coup = coups[random.randint(0, len(coups) - 1)]
                 if ia and bot_used == 2:
-                    coup = run_ia(plateau, model_start, model_end)
+                    if player_side:
+                        coup = run_ia(plateau, model_start_blanc, model_end_blanc)
+                    else:
+                        coup = run_ia(plateau, model_start_noir, model_end_noir)
                 elif bot_used == 1:
                     coup = run_minimax(plateau)
                 plateau.jouer_coup(coup, plateau.round_side)
@@ -149,10 +191,15 @@ if __name__ == "__main__":
         screen.blit(text, (5, 24 * 2 + 5))
         text = font.render("Coup conseillé :", True, (50, 50, 50))
         screen.blit(text, (5, 24 * 3 + 5))
-        ia_coups = display_coup([run_ia(plateau, model_start, model_end)])
-        if len(ia_coups) != 0:
-            text = font.render(f'IA: {ia_coups[0]}', True, (125, 125, 125))
-            screen.blit(text, (5, 24 * 4 + 5))
+        if ia:
+            ia_coups = []
+            if player_side == 0:
+                ia_coups = display_coup([run_ia(plateau, model_start_blanc, model_end_blanc)])
+            else:
+                ia_coups = display_coup([run_ia(plateau, model_start_noir, model_end_noir)])
+            if len(ia_coups) != 0:
+                text = font.render(f'IA: {ia_coups[0]}', True, (125, 125, 125))
+                screen.blit(text, (5, 24 * 4 + 5))
         text = font.render("Coups possibles :", True, (50, 50, 50))
         screen.blit(text, (5, 24 * 5 + 5))
         for i in range(1, len(real_coup) + 1):
